@@ -6,14 +6,9 @@ import sys
 import json
 from pathlib import Path
 import time
-
-# --- Ensure validator module is reloaded each run ---
-# --- Ensure validator module is accessible ---
-import sys
-from pathlib import Path
 import importlib
 
-# Add project root to sys.path
+# --- Ensure validator module is accessible ---
 project_root = Path(__file__).resolve().parents[1]
 validator_dir = project_root / "validator"
 sys.path.insert(0, str(validator_dir))
@@ -21,8 +16,6 @@ sys.path.insert(0, str(validator_dir))
 import flexible_validator as fv
 importlib.reload(fv)
 from flexible_validator import run_flexible_validation
-
-
 
 # --- Streamlit Page Config ---
 st.set_page_config(page_title="Flask Project Validator", page_icon="🧠", layout="wide")
@@ -51,12 +44,31 @@ with col_left:
     st.markdown("---")
 
 # ======================================================
-# RIGHT COLUMN: Logs output
+# RIGHT COLUMN: Logs output (scrollable block)
 # ======================================================
 with col_right:
     st.header("Validation Logs")
-    log_box = st.empty()  # Dynamic log area for streaming updates
-    st.markdown("Logs will appear here as the validation runs...")
+    log_box = st.empty()  # single dynamic container
+
+    log_box.markdown(
+        """
+        <div style="
+            border:1px solid #444;
+            border-radius:10px;
+            background-color:#000;
+            color:#0f0;
+            padding:10px;
+            height:450px;
+            overflow-y:scroll;
+            font-family:monospace;
+            white-space:pre-wrap;
+            font-size:13px;">
+        Logs will appear here as the validation runs...
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
 
 # ======================================================
 # VALIDATION LOGIC
@@ -66,75 +78,119 @@ if run_validation and uploaded_file and student_id and project_name:
         temp_dir = tempfile.mkdtemp()
         zip_path = os.path.join(temp_dir, uploaded_file.name)
 
-        # Save the uploaded ZIP file
+        # Save uploaded ZIP
         with open(zip_path, "wb") as f:
             f.write(uploaded_file.getvalue())
 
-        # Extract project
+        # Extract contents
         with zipfile.ZipFile(zip_path, "r") as zip_ref:
             zip_ref.extractall(temp_dir)
 
-        # --- Run validation ---
-        # Show simulated log streaming while validation runs
-        log_box.text("Starting validation...\n")
+        # Run validation
+        log_box.markdown(
+            """
+            <div style="border:1px solid #ccc;border-radius:10px;background-color:#000;color:#0f0;padding:10px;height:450px;overflow-y:scroll;font-family:monospace;white-space:pre-wrap;font-size:13px;">
+            Starting validation...
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
         result = run_flexible_validation(temp_dir)
 
-        # --- Display logs ---
+        # Read logs
+        log_html = ""
         if os.path.exists(result["log_file"]):
             with open(result["log_file"], "r", encoding="utf-8") as logf:
                 content = logf.read()
-                log_box.text(content)
+                log_html = (
+                    f"<div style='border:1px solid #ccc;border-radius:10px;background-color:#000;color:#0f0;"
+                    f"padding:10px;height:450px;overflow-y:scroll;font-family:monospace;white-space:pre-wrap;"
+                    f"font-size:13px;'>{content}</div>"
+                )
         else:
-            log_box.text("No logs found.")
+            log_html = (
+                "<div style='border:1px solid #ccc;border-radius:10px;padding:10px;height:450px;overflow-y:scroll;"
+                "background-color:#f8f9fa;'>No logs found.</div>"
+            )
 
-        # --- Display summary info on the left ---
+        log_box.markdown(log_html, unsafe_allow_html=True)
+
+        # --- Display summary info ---
         summary_html = ""
 
-        # Basic project info
+        # Project details
         summary_html += f"**Project:** {project_name}<br>"
         summary_html += f"**Student ID:** {student_id}<br>"
         summary_html += f"**Result:** {'✅ PASSED' if result['success'] else '❌ FAILED'}<br><br>"
 
-        # --- JSON results ---
+        # Parse JSON file for more insights
         if os.path.exists(result["json_file"]):
             try:
                 with open(result["json_file"], "r", encoding="utf-8") as jf:
                     data = json.load(jf)
 
-                # Extract modules used (by parsing flask imports)
+                # --- Modules used ---
                 events = data.get("events", [])
-                modules = []
-                for e in events:
-                    msg = e.get("message", "")
-                    if "import" in msg and "flask" in msg:
-                        modules.append(msg)
-                modules = list(set(modules))
-                summary_html += f"**Modules Used:**<br>"
+                modules = sorted(set(e["message"] for e in events if "import" in e.get("message", "").lower()))
+                summary_html += "<b>Modules Used:</b><br>"
                 if modules:
                     summary_html += "<ul>" + "".join([f"<li>{m}</li>" for m in modules]) + "</ul>"
                 else:
-                    summary_html += "No modules detected.<br>"
+                    summary_html += "No Flask modules detected.<br>"
 
-                # Extract DB schema
+                # --- Database schemas ---
                 db_info = data.get("db_inspection", [])
                 if db_info:
-                    summary_html += f"<br>**Database Schemas:**<br>"
+                    seen_dbs = set()
+                    summary_html += "<br><b>Database Schemas:</b><br>"
                     for db in db_info:
-                        summary_html += f"<b>{db['path']}</b><br>"
+                        db_name = Path(db["path"]).name
+                        if db_name in seen_dbs:
+                            continue
+                        seen_dbs.add(db_name)
+                        summary_html += f"<b>{db_name}</b><br>"
                         for tbl, cols in db.get("tables", {}).items():
                             summary_html += f"<b>• {tbl}</b> ({len(cols)} columns)<br>"
-                            summary_html += "<ul>" + "".join([f"<li>{c['name']} ({c['type']})</li>" for c in cols]) + "</ul>"
+                            summary_html += "<ul>" + "".join(
+                                [f"<li>{c['name']} ({c['type']})</li>" for c in cols]
+                            ) + "</ul>"
                 else:
-                    summary_html += "<br>**Database Schemas:** None detected.<br>"
+                    summary_html += "<br><b>Database Schemas:</b> None detected.<br>"
+
+                # --- Payloads used for testing ---
+                crud_results = data.get("crud_results", [])
+                if crud_results:
+                    summary_html += "<br><b>Payloads Used for Testing:</b><br>"
+                    for item in crud_results:
+                        action = item.get("action", "")
+                        endpoint = item.get("endpoint", "")
+                        payload = item.get("payload", {})
+
+                        # Only show if payload was actually sent
+                        if action in ("GET", "CREATE", "UPDATE", "DELETE") and payload:
+                            # Strip empty/default-like keys
+                            sent_payload = {k: v for k, v in payload.items() if v not in ("", None)}
+
+                            summary_html += (
+                                f"<details style='margin-bottom:6px;'>"
+                                f"<summary><code>{endpoint}</code> → {action}</summary>"
+                                f"<pre style='background-color:#1e1e1e;color:#00ff90;"
+                                f"padding:6px;border-radius:5px;font-size:13px;'>"
+                                f"{json.dumps(sent_payload, indent=2)}</pre></details>"
+                            )
+                    if not any(i.get("payload") for i in crud_results):
+                        summary_html += "No payloads were captured.<br>"
+                else:
+                    summary_html += "<br><b>Payloads Used for Testing:</b> None detected.<br>"
 
             except Exception as e:
-                summary_html += f"<br>⚠️ Error reading summary JSON: {e}"
+                summary_html += f"<br> Error reading summary JSON: {e}"
 
         else:
             summary_html += "No JSON summary available."
 
-        # Render summary
+        # Display results
         with col_left:
             result_placeholder.markdown(summary_html, unsafe_allow_html=True)
 

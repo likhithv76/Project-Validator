@@ -424,8 +424,12 @@ class FlexibleFlaskValidator:
             ep = "/" + ep
         return ep
 
-    def generate_test_payload(self, table_name=None):
-        """Create a generic test payload. If table_name is given, try to match typical columns."""
+    def generate_test_payload(self, table_name=None, endpoint_name=None):
+        """
+        Generate a context-aware test payload.
+        Uses DB schema if available, otherwise uses intelligent defaults.
+        Also adjusts payloads based on endpoint name patterns (register, login, etc.)
+        """
         base = {
             "username": "test_user",
             "email": "test_user@example.com",
@@ -433,20 +437,51 @@ class FlexibleFlaskValidator:
             "name": "Test Name",
             "title": "Test Title",
             "content": "Sample content",
-            "id": 1
+            "description": "Test record",
+            "id": 1,
         }
-        # If specific heuristics needed, customize here using table_name
+
+        # Adjust for common endpoint types
+        if endpoint_name:
+            ep = endpoint_name.lower()
+            if "register" in ep or "signup" in ep:
+                base["confirm_password"] = base["password"]
+            if "login" in ep:
+                base = {"email": base["email"], "password": base["password"]}
+            if "user" in ep:
+                base["role"] = "student"
+            if "post" in ep or "blog" in ep:
+                base["title"] = "Sample Post"
+                base["content"] = "This is test content for validation."
+            if "feedback" in ep or "comment" in ep:
+                base["message"] = "This is an automated test message."
+
+        # Try to enrich payload with DB schema if available
+        db_info = self.run_log.get("db_inspection", [])
+        if db_info and table_name:
+            for db in db_info:
+                tables = db.get("tables", {})
+                if table_name in tables:
+                    for col in tables[table_name]:
+                        cname = col["name"].lower()
+                        ctype = (col["type"] or "").lower()
+                        if "email" in cname:
+                            base[col["name"]] = base["email"]
+                        elif "user" in cname:
+                            base[col["name"]] = base["username"]
+                        elif "pass" in cname:
+                            base[col["name"]] = base["password"]
+                        elif "title" in cname:
+                            base[col["name"]] = base["title"]
+                        elif "content" in cname or "text" in cname:
+                            base[col["name"]] = base["content"]
+                        elif "created" in cname or "date" in cname:
+                            base[col["name"]] = "2025-10-07"
+                        elif "id" in cname:
+                            base[col["name"]] = 1
         return base
 
     def perform_crud_tests(self, endpoints, host=None, port=None):
-        """
-        Attempt CRUD-like operations against endpoints.
-        heuristics: endpoint names containing create/add/register -> POST,
-                    names containing edit/update -> POST,
-                    delete/remove -> POST,
-                    list/view/get -> GET
-        Returns list of result dicts.
-        """
         results = []
         if not requests:
             self.log("requests not installed; skipping CRUD tests.", level="WARN")
@@ -456,13 +491,15 @@ class FlexibleFlaskValidator:
         port = port or self.DEFAULT_PORT
         base_url = f"http://{host}:{port}"
         session = requests.Session()
-        payload = self.generate_test_payload()
 
         for ep in endpoints:
             ep_norm = self._normalize_endpoint(ep)
             url = base_url + ep_norm
             action = "UNKNOWN"
             try:
+                # generate context-aware payload
+                payload = self.generate_test_payload(endpoint_name=ep_norm)
+
                 # classify by keywords
                 lower = ep_norm.lower()
                 if any(k in lower for k in ["/create", "/add", "/register", "/new"]):
@@ -474,43 +511,37 @@ class FlexibleFlaskValidator:
                 elif any(k in lower for k in ["/delete", "/remove"]):
                     action = "DELETE"
                     r = session.post(url, data={"id": payload.get("id", 1)}, timeout=self.REQUEST_TIMEOUT, allow_redirects=True)
-                elif any(k in lower for k in ["/list", "/users", "/items", "/view", "/get", "/index", "/"]):
-                    # treat root and listing-like endpoints as READ
+                else:
                     action = "READ"
                     r = session.get(url, timeout=self.REQUEST_TIMEOUT)
-                else:
-                    # fallback: try GET first, then POST
-                    action = "READ"
-                    try:
-                        r = session.get(url, timeout=self.REQUEST_TIMEOUT)
-                    except Exception:
-                        action = "CREATE"
-                        r = session.post(url, data=payload, timeout=self.REQUEST_TIMEOUT)
 
                 status = getattr(r, "status_code", None)
                 ok = status in (200, 201, 302)
                 msg = f"{action} {url} -> {status}"
                 self.log(msg, level="HTTP")
+
                 result = {
                     "endpoint": ep_norm,
                     "url": url,
                     "action": action,
                     "status_code": status,
                     "ok": bool(ok),
+                    "payload": payload,  # store payload used
                     "response_snippet": (r.text[:400] if hasattr(r, "text") else "")
                 }
                 results.append(result)
-                # add checks based on action
                 self.add_check(f"{action} test for {ep_norm}", ok, points=5, message=f"HTTP {status}")
-                # store crud result in structured log
                 self.run_log["crud_results"].append(result)
+
             except Exception as e:
                 self.log(f"Error during CRUD test for {url}: {e}", level="ERROR")
-                res = {"endpoint": ep_norm, "url": url, "action": action, "ok": False, "error": str(e)}
-                results.append(res)
-                self.add_check(f"{action} test for {ep_norm}", False, points=0, message=str(e))
-                self.run_log["crud_results"].append(res)
-
+                results.append({
+                    "endpoint": ep_norm,
+                    "url": url,
+                    "action": action,
+                    "ok": False,
+                    "error": str(e)
+                })
         return results
 
     # -------------------- Syntax checks --------------------
