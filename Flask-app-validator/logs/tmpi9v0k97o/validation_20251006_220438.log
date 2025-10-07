@@ -1,0 +1,102 @@
+[2025-10-06T16:34:38.791915Z] [INFO] Starting Flexible Flask Application Validation
+[2025-10-06T16:34:38.792204Z] [INFO] ============================================================
+[2025-10-06T16:34:38.792372Z] [INFO] Validating project structure...
+[2025-10-06T16:34:38.792518Z] [INFO] Scanning for Python files containing Flask imports...
+[2025-10-06T16:34:38.795585Z] [INFO] Found 1 Flask-related Python file(s).
+[2025-10-06T16:34:38.795781Z] [CHECK] PASS: Flask files found - Found 1 Flask Python file(s)
+[2025-10-06T16:34:38.795910Z] [INFO] Locating main Flask application file...
+[2025-10-06T16:34:38.796737Z] [INFO] Selected main app file: C:\Users\lvg\AppData\Local\Temp\tmpi9v0k97o\playoff\app.py
+[2025-10-06T16:34:38.796885Z] [CHECK] PASS: Main app file - Main Flask app: app.py
+[2025-10-06T16:34:38.797656Z] [CHECK] FAIL: Dependencies file - No dependencies file found
+[2025-10-06T16:34:38.798939Z] [INFO] Found 6 HTML template file(s).
+[2025-10-06T16:34:38.799049Z] [CHECK] PASS: Template files - Found 6 HTML templates
+[2025-10-06T16:34:38.799135Z] [INFO] Validating Flask imports in main app file...
+[2025-10-06T16:34:38.799426Z] [CHECK] PASS: Import: from flask import - Flask core imports
+[2025-10-06T16:34:38.799638Z] [CHECK] PASS: Import: Flask( - Flask app creation
+[2025-10-06T16:34:38.799761Z] [CHECK] PASS: Import: render_template - Template rendering
+[2025-10-06T16:34:38.799906Z] [CHECK] PASS: Import: request - Request handling
+[2025-10-06T16:34:38.800043Z] [CHECK] PASS: Import: redirect - Redirect functionality
+[2025-10-06T16:34:38.800207Z] [INFO] Validating database imports...
+[2025-10-06T16:34:38.800759Z] [CHECK] PASS: Database: from flask_sqlalchemy import - SQLAlchemy ORM
+[2025-10-06T16:34:38.800951Z] [CHECK] PASS: Database: from werkzeug.security import - Password security
+[2025-10-06T16:34:38.801122Z] [CHECK] PASS: Database: generate_password_hash - Password hashing
+[2025-10-06T16:34:38.801292Z] [CHECK] PASS: Database: check_password_hash - Password verification
+[2025-10-06T16:34:38.801437Z] [INFO] Validating route definitions statically...
+[2025-10-06T16:34:38.802034Z] [CHECK] PASS: Routes: Route decorators - Found 5 route decorators
+[2025-10-06T16:34:38.802380Z] [CHECK] PASS: Routes: Route functions - Found 8 route functions
+[2025-10-06T16:34:38.802651Z] [CHECK] PASS: Routes: Template rendering - Found 10 template rendering
+[2025-10-06T16:34:38.803012Z] [CHECK] PASS: Routes: Redirects - Found 4 redirects
+[2025-10-06T16:34:38.803193Z] [INFO] Validating authentication-related code statically...
+[2025-10-06T16:34:38.803716Z] [CHECK] PASS: Auth: Session management - Session management
+[2025-10-06T16:34:38.803891Z] [CHECK] PASS: Auth: HTTP method handling - HTTP method handling
+[2025-10-06T16:34:38.803973Z] [CHECK] PASS: Auth: Form data access - Form data access
+[2025-10-06T16:34:38.804097Z] [CHECK] PASS: Auth: Flash messages - Flash messages
+[2025-10-06T16:34:38.804204Z] [CHECK] PASS: Auth: Secret key - Secret key
+[2025-10-06T16:34:38.804349Z] [INFO] Validating template usage (render_template references)...
+[2025-10-06T16:34:38.805242Z] [CHECK] PASS: Template reference check - All referenced templates exist
+[2025-10-06T16:34:38.805421Z] [INFO] Basic functionality checks...
+[2025-10-06T16:34:38.805876Z] [CHECK] PASS: App execution method - app.run() found
+[2025-10-06T16:34:38.806043Z] [CHECK] PASS: Database initialization - DB initialization found
+[2025-10-06T16:34:38.806184Z] [INFO] Running flake8 syntax checks...
+[2025-10-06T16:34:38.917387Z] [CHECK] PASS: Syntax check (flake8) - No critical syntax errors found
+[2025-10-06T16:34:38.919264Z] [INFO] Auto-installing detected Flask packages: flask_sqlalchemy
+[2025-10-06T16:34:41.208591Z] [INFO] Installed package: flask_sqlalchemy
+[2025-10-06T16:34:41.208825Z] [INFO] Starting student's app subprocess: C:\Users\lvg\CODES\Exskilence\project_validator\venv\Scripts\python.exe C:\Users\lvg\AppData\Local\Temp\tmpi9v0k97o\playoff\app.py (cwd=C:\Users\lvg\AppData\Local\Temp\tmpi9v0k97o)
+[2025-10-06T16:34:41.217416Z] [INFO] Waiting for app to become reachable at http://127.0.0.1:5000 (timeout 12s)...
+[2025-10-06T16:34:42.152058Z] [APP] STDOUT:  * Serving Flask app 'app'
+[2025-10-06T16:34:42.152340Z] [APP] STDOUT:  * Debug mode: on
+[2025-10-06T16:34:42.231371Z] [APP] STDERR: WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+[2025-10-06T16:34:42.231662Z] [APP] STDERR:  * Running on http://127.0.0.1:5000
+[2025-10-06T16:34:42.231843Z] [APP] STDERR: Press CTRL+C to quit
+[2025-10-06T16:34:42.243098Z] [APP] STDERR:  * Restarting with watchdog (windowsapi)
+[2025-10-06T16:34:42.924197Z] [APP] STDERR:  * Debugger is active!
+[2025-10-06T16:34:42.925914Z] [APP] STDERR:  * Debugger PIN: 104-221-220
+[2025-10-06T16:34:42.964012Z] [APP] STDERR: 127.0.0.1 - - [06/Oct/2025 22:04:42] "GET / HTTP/1.1" 200 -
+[2025-10-06T16:34:42.965399Z] [APP] App responded to GET http://127.0.0.1:5000 with status 200
+[2025-10-06T16:34:42.965706Z] [CHECK] PASS: Runtime: app reachable - App responded on host:port
+[2025-10-06T16:34:42.966907Z] [INFO] Statically discovered endpoints: ['/', '/login', '/logout', '/profile', '/register']
+[2025-10-06T16:34:42.971407Z] [APP] STDERR: 127.0.0.1 - - [06/Oct/2025 22:04:42] "GET / HTTP/1.1" 200 -
+[2025-10-06T16:34:42.988719Z] [APP] STDERR: 127.0.0.1 - - [06/Oct/2025 22:04:42] "GET /routes HTTP/1.1" 404 -
+[2025-10-06T16:34:42.992983Z] [APP] STDERR: 127.0.0.1 - - [06/Oct/2025 22:04:42] "GET /_routes HTTP/1.1" 404 -
+[2025-10-06T16:34:42.996316Z] [APP] STDERR: 127.0.0.1 - - [06/Oct/2025 22:04:42] "GET /_all_routes HTTP/1.1" 404 -
+[2025-10-06T16:34:42.997262Z] [INFO] Dynamically discovered endpoints: ['/login', '/register']
+[2025-10-06T16:34:42.997630Z] [INFO] Final endpoint list for testing: ['/', '/login', '/logout', '/profile', '/register']
+[2025-10-06T16:34:43.003564Z] [INFO] Database files found: ['C:\\Users\\lvg\\AppData\\Local\\Temp\\tmpi9v0k97o\\instance\\users.db', 'C:\\Users\\lvg\\AppData\\Local\\Temp\\tmpi9v0k97o\\playoff\\instance\\users.db']
+[2025-10-06T16:34:43.005361Z] [INFO] Inspected DB C:\Users\lvg\AppData\Local\Temp\tmpi9v0k97o\instance\users.db: tables=['user']
+[2025-10-06T16:34:43.007416Z] [INFO] Inspected DB C:\Users\lvg\AppData\Local\Temp\tmpi9v0k97o\playoff\instance\users.db: tables=['user']
+[2025-10-06T16:34:43.033915Z] [APP] STDERR: 127.0.0.1 - - [06/Oct/2025 22:04:43] "GET / HTTP/1.1" 200 -
+[2025-10-06T16:34:43.034714Z] [HTTP] READ http://127.0.0.1:5000/ -> 200
+[2025-10-06T16:34:43.034906Z] [CHECK] PASS: READ test for / - HTTP 200
+[2025-10-06T16:34:43.053169Z] [APP] STDERR: 127.0.0.1 - - [06/Oct/2025 22:04:43] "GET /login HTTP/1.1" 200 -
+[2025-10-06T16:34:43.054027Z] [HTTP] READ http://127.0.0.1:5000/login -> 200
+[2025-10-06T16:34:43.054223Z] [CHECK] PASS: READ test for /login - HTTP 200
+[2025-10-06T16:34:43.080890Z] [APP] STDERR: 127.0.0.1 - - [06/Oct/2025 22:04:43] "GET /logout HTTP/1.1" 302 -
+[2025-10-06T16:34:43.096152Z] [APP] STDERR: 127.0.0.1 - - [06/Oct/2025 22:04:43] "GET / HTTP/1.1" 200 -
+[2025-10-06T16:34:43.097233Z] [HTTP] READ http://127.0.0.1:5000/logout -> 200
+[2025-10-06T16:34:43.097432Z] [CHECK] PASS: READ test for /logout - HTTP 200
+[2025-10-06T16:34:43.111757Z] [APP] STDERR: 127.0.0.1 - - [06/Oct/2025 22:04:43] "GET /profile HTTP/1.1" 302 -
+[2025-10-06T16:34:43.127106Z] [APP] STDERR: 127.0.0.1 - - [06/Oct/2025 22:04:43] "GET /login HTTP/1.1" 200 -
+[2025-10-06T16:34:43.128110Z] [HTTP] READ http://127.0.0.1:5000/profile -> 200
+[2025-10-06T16:34:43.128319Z] [CHECK] PASS: READ test for /profile - HTTP 200
+[2025-10-06T16:34:43.149981Z] [APP] STDERR: 127.0.0.1 - - [06/Oct/2025 22:04:43] "POST /register HTTP/1.1" 500 -
+[2025-10-06T16:34:43.151043Z] [APP] STDERR: Traceback (most recent call last):
+[2025-10-06T16:34:43.151250Z] [HTTP] CREATE http://127.0.0.1:5000/register -> 500
+[2025-10-06T16:34:43.151333Z] [APP] STDERR:   File "C:\Users\lvg\CODES\Exskilence\project_validator\venv\Lib\site-packages\flask\app.py", line 1536, in __call__
+[2025-10-06T16:34:43.151457Z] [CHECK] FAIL: CREATE test for /register - HTTP 500
+[2025-10-06T16:34:43.151576Z] [APP] STDERR:     return self.wsgi_app(environ, start_response)
+[2025-10-06T16:34:43.152217Z] [INFO] Stopping student's app subprocess...
+[2025-10-06T16:34:43.152322Z] [APP] STDERR:            ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+[2025-10-06T16:34:43.152956Z] [APP] STDERR:   File "C:\Users\lvg\CODES\Exskilence\project_validator\venv\Lib\site-packages\flask\app.py", line 1514, in wsgi_app
+[2025-10-06T16:34:43.153159Z] [APP] STDERR:     response = self.handle_exception(e)
+[2025-10-06T16:34:43.153321Z] [APP] STDERR:   File "C:\Users\lvg\CODES\Exskilence\project_validator\venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+[2025-10-06T16:34:43.153526Z] [APP] STDERR:     response = self.full_dispatch_request()
+[2025-10-06T16:34:43.153649Z] [APP] STDERR:   File "C:\Users\lvg\CODES\Exskilence\project_validator\venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+[2025-10-06T16:34:44.160898Z] [INFO] Wrote JSON summary to Logs\tmpi9v0k97o\validation_20251006_220438.json
+[2025-10-06T16:34:44.161126Z] [INFO] ============================================================
+[2025-10-06T16:34:44.161289Z] [INFO] VALIDATION SUMMARY
+[2025-10-06T16:34:44.161455Z] [INFO] Checks Passed: 30/32
+[2025-10-06T16:34:44.161632Z] [INFO] Errors: 0
+[2025-10-06T16:34:44.161780Z] [INFO] Warnings: 1
+[2025-10-06T16:34:44.161891Z] [WARN] WARNINGS (summary):
+[2025-10-06T16:34:44.162008Z] [WARN]   - No requirements.txt or dependencies file found
+[2025-10-06T16:34:44.162149Z] [RESULT] Validation PASSED - No critical errors found

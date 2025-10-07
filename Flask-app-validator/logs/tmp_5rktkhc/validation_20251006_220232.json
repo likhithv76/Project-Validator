@@ -1,0 +1,461 @@
+{
+  "project": "C:\\Users\\lvg\\AppData\\Local\\Temp\\tmp_5rktkhc",
+  "project_name": "tmp_5rktkhc",
+  "started_at": "2025-10-06T16:32:32.642916Z",
+  "events": [
+    {
+      "timestamp": "2025-10-06T16:32:32.643476Z",
+      "level": "INFO",
+      "message": "Starting Flexible Flask Application Validation"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.643700Z",
+      "level": "INFO",
+      "message": "============================================================"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.643814Z",
+      "level": "INFO",
+      "message": "Validating project structure..."
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.643951Z",
+      "level": "INFO",
+      "message": "Scanning for Python files containing Flask imports..."
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.646743Z",
+      "level": "INFO",
+      "message": "Found 1 Flask-related Python file(s)."
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.646892Z",
+      "level": "CHECK",
+      "message": "PASS: Flask files found - Found 1 Flask Python file(s)"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.647004Z",
+      "level": "INFO",
+      "message": "Locating main Flask application file..."
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.647596Z",
+      "level": "INFO",
+      "message": "Selected main app file: C:\\Users\\lvg\\AppData\\Local\\Temp\\tmp_5rktkhc\\playoff\\app.py"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.647716Z",
+      "level": "CHECK",
+      "message": "PASS: Main app file - Main Flask app: app.py"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.648070Z",
+      "level": "CHECK",
+      "message": "FAIL: Dependencies file - No dependencies file found"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.649210Z",
+      "level": "INFO",
+      "message": "Found 6 HTML template file(s)."
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.649358Z",
+      "level": "CHECK",
+      "message": "PASS: Template files - Found 6 HTML templates"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.649457Z",
+      "level": "INFO",
+      "message": "Validating Flask imports in main app file..."
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.649819Z",
+      "level": "CHECK",
+      "message": "PASS: Import: from flask import - Flask core imports"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.649956Z",
+      "level": "CHECK",
+      "message": "PASS: Import: Flask( - Flask app creation"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.650049Z",
+      "level": "CHECK",
+      "message": "PASS: Import: render_template - Template rendering"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.650137Z",
+      "level": "CHECK",
+      "message": "PASS: Import: request - Request handling"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.650221Z",
+      "level": "CHECK",
+      "message": "PASS: Import: redirect - Redirect functionality"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.650307Z",
+      "level": "INFO",
+      "message": "Validating database imports..."
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.650642Z",
+      "level": "CHECK",
+      "message": "PASS: Database: from flask_sqlalchemy import - SQLAlchemy ORM"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.650749Z",
+      "level": "CHECK",
+      "message": "PASS: Database: from werkzeug.security import - Password security"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.650999Z",
+      "level": "CHECK",
+      "message": "PASS: Database: generate_password_hash - Password hashing"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.651173Z",
+      "level": "CHECK",
+      "message": "PASS: Database: check_password_hash - Password verification"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.651350Z",
+      "level": "INFO",
+      "message": "Validating route definitions statically..."
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.651811Z",
+      "level": "CHECK",
+      "message": "PASS: Routes: Route decorators - Found 5 route decorators"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.652018Z",
+      "level": "CHECK",
+      "message": "PASS: Routes: Route functions - Found 8 route functions"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.652180Z",
+      "level": "CHECK",
+      "message": "PASS: Routes: Template rendering - Found 10 template rendering"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.652362Z",
+      "level": "CHECK",
+      "message": "PASS: Routes: Redirects - Found 4 redirects"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.652526Z",
+      "level": "INFO",
+      "message": "Validating authentication-related code statically..."
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.652992Z",
+      "level": "CHECK",
+      "message": "PASS: Auth: Session management - Session management"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.653142Z",
+      "level": "CHECK",
+      "message": "PASS: Auth: HTTP method handling - HTTP method handling"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.653288Z",
+      "level": "CHECK",
+      "message": "PASS: Auth: Form data access - Form data access"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.653427Z",
+      "level": "CHECK",
+      "message": "PASS: Auth: Flash messages - Flash messages"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.653554Z",
+      "level": "CHECK",
+      "message": "PASS: Auth: Secret key - Secret key"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.653686Z",
+      "level": "INFO",
+      "message": "Validating template usage (render_template references)..."
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.654229Z",
+      "level": "CHECK",
+      "message": "PASS: Template reference check - All referenced templates exist"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.654408Z",
+      "level": "INFO",
+      "message": "Basic functionality checks..."
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.654793Z",
+      "level": "CHECK",
+      "message": "PASS: App execution method - app.run() found"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.654966Z",
+      "level": "CHECK",
+      "message": "PASS: Database initialization - DB initialization found"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.655125Z",
+      "level": "INFO",
+      "message": "Running flake8 syntax checks..."
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.710961Z",
+      "level": "CHECK",
+      "message": "PASS: Syntax check (flake8) - No critical syntax errors found"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.711262Z",
+      "level": "INFO",
+      "message": "Starting student's app subprocess: C:\\Users\\lvg\\CODES\\Exskilence\\project_validator\\venv\\Scripts\\python.exe C:\\Users\\lvg\\AppData\\Local\\Temp\\tmp_5rktkhc\\playoff\\app.py (cwd=C:\\Users\\lvg\\AppData\\Local\\Temp\\tmp_5rktkhc)"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:32.723024Z",
+      "level": "INFO",
+      "message": "Waiting for app to become reachable at http://127.0.0.1:5000 (timeout 12s)..."
+    },
+    {
+      "timestamp": "2025-10-06T16:32:33.003493Z",
+      "level": "APP",
+      "message": "STDERR: Traceback (most recent call last):"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:33.003757Z",
+      "level": "APP",
+      "message": "STDERR:   File \"C:\\Users\\lvg\\AppData\\Local\\Temp\\tmp_5rktkhc\\playoff\\app.py\", line 2, in <module>"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:33.004021Z",
+      "level": "APP",
+      "message": "STDERR:     from flask_sqlalchemy import SQLAlchemy"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:33.004195Z",
+      "level": "APP",
+      "message": "STDERR: ModuleNotFoundError: No module named 'flask_sqlalchemy'"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:35.265099Z",
+      "level": "ERROR",
+      "message": "Subprocess exited while waiting for app to start."
+    },
+    {
+      "timestamp": "2025-10-06T16:32:35.265440Z",
+      "level": "CHECK",
+      "message": "FAIL: Runtime: app reachable - App did not respond in time"
+    },
+    {
+      "timestamp": "2025-10-06T16:32:35.265653Z",
+      "level": "INFO",
+      "message": "Stopping student's app subprocess..."
+    }
+  ],
+  "endpoints": [],
+  "db_inspection": {},
+  "crud_results": [],
+  "summary": {
+    "checks_passed": 25,
+    "total_checks": 27,
+    "success": true
+  },
+  "ended_at": "2025-10-06T16:32:35.265620Z",
+  "validation_results": [
+    {
+      "name": "Flask files found",
+      "passed": true,
+      "status": "PASS",
+      "points": 15,
+      "message": "Found 1 Flask Python file(s)"
+    },
+    {
+      "name": "Main app file",
+      "passed": true,
+      "status": "PASS",
+      "points": 10,
+      "message": "Main Flask app: app.py"
+    },
+    {
+      "name": "Dependencies file",
+      "passed": false,
+      "status": "FAIL",
+      "points": 0,
+      "message": "No dependencies file found"
+    },
+    {
+      "name": "Template files",
+      "passed": true,
+      "status": "PASS",
+      "points": 10,
+      "message": "Found 6 HTML templates"
+    },
+    {
+      "name": "Import: from flask import",
+      "passed": true,
+      "status": "PASS",
+      "points": 8,
+      "message": "Flask core imports"
+    },
+    {
+      "name": "Import: Flask(",
+      "passed": true,
+      "status": "PASS",
+      "points": 5,
+      "message": "Flask app creation"
+    },
+    {
+      "name": "Import: render_template",
+      "passed": true,
+      "status": "PASS",
+      "points": 5,
+      "message": "Template rendering"
+    },
+    {
+      "name": "Import: request",
+      "passed": true,
+      "status": "PASS",
+      "points": 3,
+      "message": "Request handling"
+    },
+    {
+      "name": "Import: redirect",
+      "passed": true,
+      "status": "PASS",
+      "points": 3,
+      "message": "Redirect functionality"
+    },
+    {
+      "name": "Database: from flask_sqlalchemy import",
+      "passed": true,
+      "status": "PASS",
+      "points": 5,
+      "message": "SQLAlchemy ORM"
+    },
+    {
+      "name": "Database: from werkzeug.security import",
+      "passed": true,
+      "status": "PASS",
+      "points": 5,
+      "message": "Password security"
+    },
+    {
+      "name": "Database: generate_password_hash",
+      "passed": true,
+      "status": "PASS",
+      "points": 3,
+      "message": "Password hashing"
+    },
+    {
+      "name": "Database: check_password_hash",
+      "passed": true,
+      "status": "PASS",
+      "points": 3,
+      "message": "Password verification"
+    },
+    {
+      "name": "Routes: Route decorators",
+      "passed": true,
+      "status": "PASS",
+      "points": 10,
+      "message": "Found 5 route decorators"
+    },
+    {
+      "name": "Routes: Route functions",
+      "passed": true,
+      "status": "PASS",
+      "points": 5,
+      "message": "Found 8 route functions"
+    },
+    {
+      "name": "Routes: Template rendering",
+      "passed": true,
+      "status": "PASS",
+      "points": 5,
+      "message": "Found 10 template rendering"
+    },
+    {
+      "name": "Routes: Redirects",
+      "passed": true,
+      "status": "PASS",
+      "points": 3,
+      "message": "Found 4 redirects"
+    },
+    {
+      "name": "Auth: Session management",
+      "passed": true,
+      "status": "PASS",
+      "points": 8,
+      "message": "Session management"
+    },
+    {
+      "name": "Auth: HTTP method handling",
+      "passed": true,
+      "status": "PASS",
+      "points": 5,
+      "message": "HTTP method handling"
+    },
+    {
+      "name": "Auth: Form data access",
+      "passed": true,
+      "status": "PASS",
+      "points": 5,
+      "message": "Form data access"
+    },
+    {
+      "name": "Auth: Flash messages",
+      "passed": true,
+      "status": "PASS",
+      "points": 3,
+      "message": "Flash messages"
+    },
+    {
+      "name": "Auth: Secret key",
+      "passed": true,
+      "status": "PASS",
+      "points": 5,
+      "message": "Secret key"
+    },
+    {
+      "name": "Template reference check",
+      "passed": true,
+      "status": "PASS",
+      "points": 5,
+      "message": "All referenced templates exist"
+    },
+    {
+      "name": "App execution method",
+      "passed": true,
+      "status": "PASS",
+      "points": 5,
+      "message": "app.run() found"
+    },
+    {
+      "name": "Database initialization",
+      "passed": true,
+      "status": "PASS",
+      "points": 5,
+      "message": "DB initialization found"
+    },
+    {
+      "name": "Syntax check (flake8)",
+      "passed": true,
+      "status": "PASS",
+      "points": 0,
+      "message": "No critical syntax errors found"
+    },
+    {
+      "name": "Runtime: app reachable",
+      "passed": false,
+      "status": "FAIL",
+      "points": 0,
+      "message": "App did not respond in time"
+    }
+  ],
+  "errors": [],
+  "warnings": [
+    "No requirements.txt or dependencies file found"
+  ]
+}
