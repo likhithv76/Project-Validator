@@ -8,6 +8,7 @@ import sqlite3
 import threading
 from pathlib import Path
 from datetime import datetime
+from html.parser import HTMLParser
 
 try:
     import requests
@@ -19,6 +20,32 @@ try:
     import flake8.api.legacy as flake8
 except ImportError:
     flake8 = None
+
+
+class StrictHTMLChecker(HTMLParser):
+    """Lightweight HTML syntax checker for missing tags and nesting errors."""
+    def __init__(self):
+        super().__init__()
+        self.stack = []
+        self.errors = []
+    
+    def handle_starttag(self, tag, attrs):
+        self.stack.append(tag)
+    
+    def handle_endtag(self, tag):
+        if not self.stack:
+            self.errors.append(f"Unexpected closing tag </{tag}>")
+        elif self.stack[-1] != tag:
+            expected = self.stack[-1]
+            self.errors.append(f"Mismatched closing tag </{tag}> (expected </{expected}>)")
+            self.stack.pop()
+        else:
+            self.stack.pop()
+    
+    def close(self):
+        super().close()
+        if self.stack:
+            self.errors.append(f"Unclosed tags: {', '.join(self.stack)}")
 
 
 class FlexibleFlaskValidator:
@@ -57,7 +84,10 @@ class FlexibleFlaskValidator:
         self.main_app_file = None
 
         # JSON rules configuration
-        self.rules_file = rules_file or Path(__file__).parent / "defaultRules.json"
+        if rules_file:
+            self.rules_file = Path(rules_file)
+        else:
+            self.rules_file = Path(__file__).parent / "defaultRules.json"
         self.json_rules = []
 
         # runtime process bookkeeping
@@ -183,6 +213,40 @@ class FlexibleFlaskValidator:
                     issues.append(f"missing inputs: {missing_inputs}")
                 
                 self.add_check(rule_name, False, 0, f"HTML validation failed - {', '.join(issues)}")
+            
+            # --- New: HTML syntax and structure validation ---
+            try:
+                checker = StrictHTMLChecker()
+                checker.feed(content)
+                checker.close()
+                
+                syntax_issues = checker.errors.copy()
+                
+                # Check for raw special characters (&, <, > not escaped)
+                if re.search(r'(?<!&)([<>])', content):
+                    syntax_issues.append("Unescaped HTML character (< or >) detected.")
+                
+                # Check for missing quotes around attribute values
+                if re.search(r'=\s*[^\'"][^\s>]*', content):
+                    syntax_issues.append("Missing quotes around one or more attribute values.")
+                
+                # Optional: Lightweight structure check using BeautifulSoup (if available)
+                try:
+                    from bs4 import BeautifulSoup
+                    soup = BeautifulSoup(content, "html.parser")
+                    # If BeautifulSoup fixes errors silently, check if tree differs significantly
+                    parsed_html = str(soup)
+                    if len(parsed_html) - len(content) > 5:  # heuristic difference
+                        syntax_issues.append("BeautifulSoup corrected malformed HTML structure.")
+                except ImportError:
+                    pass  # Skip if BeautifulSoup not installed
+                
+                if syntax_issues:
+                    self.add_check("HTML Syntax Validation", False, 0, "; ".join(syntax_issues))
+                else:
+                    self.add_check("HTML Syntax Validation", True, 5, "HTML is well-formed and valid")
+            except Exception as e:
+                self.add_check("HTML Syntax Validation", False, 0, f"Error parsing HTML: {e}")
                 
         except Exception as e:
             self.add_check(rule_name, False, 0, f"Error reading template: {e}")
