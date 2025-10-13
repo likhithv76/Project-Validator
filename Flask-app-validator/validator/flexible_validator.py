@@ -38,7 +38,7 @@ class FlexibleFlaskValidator:
     REQUEST_TIMEOUT = 4       # seconds for individual HTTP requests
     PROCESS_TERMINATE_TIMEOUT = 3  # seconds to wait after terminate()
 
-    def __init__(self, project_path):
+    def __init__(self, project_path, rules_file=None):
         self.project_path = Path(project_path)
         self.project_name = self.project_path.name if self.project_path.name else "project"
         self.logs_path = Path("Logs") / self.project_name
@@ -55,6 +55,10 @@ class FlexibleFlaskValidator:
         self.flask_files = []
         self.template_files = []
         self.main_app_file = None
+
+        # JSON rules configuration
+        self.rules_file = rules_file or Path(__file__).parent / "defaultRules.json"
+        self.json_rules = []
 
         # runtime process bookkeeping
         self.proc = None
@@ -76,7 +80,218 @@ class FlexibleFlaskValidator:
 
         # Logging file pointer
         self.log_fp = open(self.log_file, "w", encoding="utf-8")
+        
+        # Load JSON rules after log file is initialized
+        self.load_json_rules()
 
+    def load_json_rules(self):
+        """Load validation rules from JSON file."""
+        try:
+            if self.rules_file.exists():
+                with open(self.rules_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    self.json_rules = data.get("rules", [])
+                    self.log(f"Loaded {len(self.json_rules)} validation rules from {self.rules_file}")
+            else:
+                self.log(f"Rules file {self.rules_file} not found, using default validation only", level="WARN")
+                self.json_rules = []
+        except Exception as e:
+            self.log(f"Error loading rules file {self.rules_file}: {e}", level="WARN")
+            self.json_rules = []
+
+    def execute_json_rules(self):
+        """Execute all JSON-based validation rules."""
+        self.log("Executing JSON-based validation rules...")
+        
+        for rule in self.json_rules:
+            rule_type = rule.get("type", "unknown")
+            rule_file = rule.get("file", "")
+            points = rule.get("points", 0)
+            
+            try:
+                if rule_type == "html":
+                    self._validate_html_rule(rule, points)
+                elif rule_type == "requirements":
+                    self._validate_requirements_rule(rule, points)
+                elif rule_type == "database":
+                    self._validate_database_rule(rule, points)
+                elif rule_type == "security":
+                    self._validate_security_rule(rule, points)
+                elif rule_type == "runtime":
+                    self._validate_runtime_rule(rule, points)
+                else:
+                    self.log(f"Unknown rule type: {rule_type}", level="WARN")
+            except Exception as e:
+                self.log(f"Error executing rule for {rule_file}: {e}", level="ERROR")
+                self.add_check(f"JSON Rule: {rule_file}", False, 0, f"Rule execution error: {e}")
+
+    def _validate_html_rule(self, rule, points):
+        """Validate HTML template rules."""
+        file_path = self.project_path / rule["file"]
+        rule_name = f"HTML: {rule['file']}"
+        
+        if not file_path.exists():
+            self.add_check(rule_name, False, 0, f"Template file not found: {rule['file']}")
+            return
+        
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            
+            # Check required elements
+            missing_elements = []
+            if "mustHaveElements" in rule:
+                for element in rule["mustHaveElements"]:
+                    if f"<{element}" not in content:
+                        missing_elements.append(element)
+            
+            # Check required classes
+            missing_classes = []
+            if "mustHaveClasses" in rule:
+                for class_name in rule["mustHaveClasses"]:
+                    if f'class="{class_name}"' not in content and f"class='{class_name}'" not in content:
+                        missing_classes.append(class_name)
+            
+            # Check required content
+            missing_content = []
+            if "mustHaveContent" in rule:
+                for content_text in rule["mustHaveContent"]:
+                    if content_text not in content:
+                        missing_content.append(content_text)
+            
+            # Check required input fields
+            missing_inputs = []
+            if "mustHaveInputs" in rule:
+                for input_name in rule["mustHaveInputs"]:
+                    if f'name="{input_name}"' not in content and f"name='{input_name}'" not in content:
+                        missing_inputs.append(input_name)
+            
+            # Determine if rule passed
+            all_passed = not any([missing_elements, missing_classes, missing_content, missing_inputs])
+            
+            if all_passed:
+                self.add_check(rule_name, True, points, "All HTML requirements met")
+            else:
+                issues = []
+                if missing_elements:
+                    issues.append(f"missing elements: {missing_elements}")
+                if missing_classes:
+                    issues.append(f"missing classes: {missing_classes}")
+                if missing_content:
+                    issues.append(f"missing content: {missing_content}")
+                if missing_inputs:
+                    issues.append(f"missing inputs: {missing_inputs}")
+                
+                self.add_check(rule_name, False, 0, f"HTML validation failed - {', '.join(issues)}")
+                
+        except Exception as e:
+            self.add_check(rule_name, False, 0, f"Error reading template: {e}")
+
+    def _validate_requirements_rule(self, rule, points):
+        """Validate requirements.txt rules."""
+        file_path = self.project_path / rule["file"]
+        rule_name = f"Requirements: {rule['file']}"
+        
+        if not file_path.exists():
+            self.add_check(rule_name, False, 0, f"Requirements file not found: {rule['file']}")
+            return
+        
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read().lower()
+            
+            missing_packages = []
+            if "mustHavePackages" in rule:
+                for package in rule["mustHavePackages"]:
+                    if package.lower() not in content:
+                        missing_packages.append(package)
+            
+            if not missing_packages:
+                self.add_check(rule_name, True, points, "All required packages found")
+            else:
+                self.add_check(rule_name, False, 0, f"Missing packages: {missing_packages}")
+                
+        except Exception as e:
+            self.add_check(rule_name, False, 0, f"Error reading requirements file: {e}")
+
+    def _validate_database_rule(self, rule, points):
+        """Validate database file rules."""
+        file_path = self.project_path / rule["file"]
+        rule_name = f"Database: {rule['file']}"
+        
+        if rule.get("mustExist", False):
+            if file_path.exists():
+                self.add_check(rule_name, True, points, f"Database file exists: {rule['file']}")
+            else:
+                self.add_check(rule_name, False, 0, f"Database file not found: {rule['file']}")
+
+    def _validate_security_rule(self, rule, points):
+        """Validate security features in code."""
+        file_path = self.project_path / rule["file"]
+        rule_name = f"Security: {rule['file']}"
+        
+        if not file_path.exists():
+            self.add_check(rule_name, False, 0, f"File not found: {rule['file']}")
+            return
+        
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            
+            missing_features = []
+            if "mustHaveSecurity" in rule:
+                for feature in rule["mustHaveSecurity"]:
+                    feature_lower = feature.lower()
+                    found = False
+                    
+                    if "password hashing" in feature_lower:
+                        found = "generate_password_hash" in content or "hash_password" in content
+                    elif "session management" in feature_lower:
+                        found = "session[" in content or "session.get" in content
+                    elif "user validation" in feature_lower:
+                        found = "request.form" in content or "validate" in content
+                    elif "secret key" in feature_lower:
+                        found = "SECRET_KEY" in content
+                    
+                    if not found:
+                        missing_features.append(feature)
+            
+            if not missing_features:
+                self.add_check(rule_name, True, points, "All security features found")
+            else:
+                self.add_check(rule_name, False, 0, f"Missing security features: {missing_features}")
+                
+        except Exception as e:
+            self.add_check(rule_name, False, 0, f"Error reading file: {e}")
+
+    def _validate_runtime_rule(self, rule, points):
+        """Validate runtime routes."""
+        file_path = self.project_path / rule["file"]
+        rule_name = f"Runtime: {rule['file']}"
+        
+        if not file_path.exists():
+            self.add_check(rule_name, False, 0, f"File not found: {rule['file']}")
+            return
+        
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            
+            missing_routes = []
+            if "mustHaveRoutes" in rule:
+                for route in rule["mustHaveRoutes"]:
+                    # Look for route decorators
+                    route_pattern = f'@app.route("{route}"' if route != "/" else '@app.route("/"'
+                    if route_pattern not in content and f"@app.route('{route}'" not in content:
+                        missing_routes.append(route)
+            
+            if not missing_routes:
+                self.add_check(rule_name, True, points, "All required routes found")
+            else:
+                self.add_check(rule_name, False, 0, f"Missing routes: {missing_routes}")
+                
+        except Exception as e:
+            self.add_check(rule_name, False, 0, f"Error reading file: {e}")
 
     def auto_install_dependencies(self):
         """
@@ -584,6 +799,9 @@ class FlexibleFlaskValidator:
         self.validate_template_usage()
         self.validate_functionality()
         self.validate_syntax()
+        
+        # JSON-based validation rules
+        self.execute_json_rules()
 
         # Runtime: start app
         main_file = self.main_app_file
@@ -831,12 +1049,12 @@ class FlexibleFlaskValidator:
             pass
 
     # -------------------- Utility for Streamlit integration --------------------
-def run_flexible_validation(project_path: str, host: str = None, port: int = None):
+def run_flexible_validation(project_path: str, host: str = None, port: int = None, rules_file: str = None):
     """
     Helper for Streamlit or other integrations.
     Returns a dict with success bool, log paths, and errors/warnings.
     """
-    validator = FlexibleFlaskValidator(project_path)
+    validator = FlexibleFlaskValidator(project_path, rules_file=rules_file)
     success = validator.run_validation(host=host, port=port)
     return {
         "success": success,
@@ -850,18 +1068,27 @@ def run_flexible_validation(project_path: str, host: str = None, port: int = Non
 
 # -------------------- CLI --------------------
 if __name__ == "__main__":
-    if len(sys.argv) not in (2, 4):
-        print("Usage: python flexible_validator.py <project_path> [host port]")
+    if len(sys.argv) not in (2, 4, 5):
+        print("Usage: python flexible_validator.py <project_path> [host port] [rules_file]")
+        print("  project_path: Path to Flask project to validate")
+        print("  host: Host to test (default: 127.0.0.1)")
+        print("  port: Port to test (default: 5000)")
+        print("  rules_file: Path to JSON rules file (default: defaultRules.json)")
         sys.exit(1)
 
     proj = sys.argv[1]
     host = None
     port = None
-    if len(sys.argv) == 4:
+    rules_file = None
+    
+    if len(sys.argv) >= 4:
         host = sys.argv[2]
         port = int(sys.argv[3])
+    
+    if len(sys.argv) == 5:
+        rules_file = sys.argv[4]
 
-    validator = FlexibleFlaskValidator(proj)
+    validator = FlexibleFlaskValidator(proj, rules_file=rules_file)
     success = validator.run_validation(host=host, port=port)
 
     if success:

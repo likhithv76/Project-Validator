@@ -1,0 +1,74 @@
+{
+  "rules": [
+    {
+      "type": "html",
+      "file": "templates/base.html",
+      "mustHaveElements": ["nav", "footer"],
+      "mustHaveClasses": ["navbar", "container"], 
+      "points": 10
+    },
+    {
+      "type": "html",
+      "file": "templates/index.html",
+      "mustHaveElements": [ "a"],
+      "mustHaveContent": ["Welcome to Flask Auth", "Get Started", "Login"],
+      "points": 8
+    },
+    {
+      "type": "html",
+      "file": "templates/login.html",
+      "mustHaveElements": ["form", "input", "button"],
+      "mustHaveInputs": ["username", "password"],
+      "mustHaveContent": ["Login", "Register here"],
+      "points": 8
+    },
+    {
+      "type": "html",
+      "file": "templates/register.html",
+      "mustHaveElements": ["form", "input", "button"],
+      "mustHaveInputs": ["username", "email", "password", "confirm_password"],
+      "mustHaveContent": ["Create Account", "Login here"],
+      "points": 8
+    },
+    {
+      "type": "html",
+      "file": "templates/dashboard.html",
+      "mustHaveElements": ["div", "h4", "h5"],
+      "mustHaveClasses": ["card", "card-header", "card-body"],
+      "mustHaveContent": ["Dashboard", "Welcome back"],
+      "points": 8
+    },
+    {
+      "type": "html",
+      "file": "templates/profile.html",
+      "mustHaveElements": ["div", "h4", "h5"],
+      "mustHaveClasses": ["card", "card-header", "card-body"],
+      "mustHaveContent": ["User Profile", "Account Details"],
+      "points": 8
+    },
+    {
+      "type": "requirements",
+      "file": "requirements.txt",
+      "mustHavePackages": ["Flask", "Flask-SQLAlchemy", "Werkzeug"],
+      "points": 5
+    },
+    {
+      "type": "database",
+      "file": "instance/users.db",
+      "mustExist": true,
+      "points": 5
+    },
+      {
+        "type": "security",
+        "file": "app.py",
+        "mustHaveSecurity": ["password hashing", "session management", "user validation"],
+        "points": 10
+      },
+      {
+        "type": "runtime",
+        "file": "app.py",
+        "mustHaveRoutes": ["/", "/register", "/login", "/logout", "/profile"],
+        "points": 25
+      }
+  ]
+}
