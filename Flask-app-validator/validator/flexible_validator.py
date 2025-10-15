@@ -13,9 +13,8 @@ from html.parser import HTMLParser
 try:
     import requests
 except ImportError:
-    requests = None  # route & runtime testing requires requests
+    requests = None
 
-# Optional offline syntax checking
 try:
     import flake8.api.legacy as flake8
 except ImportError:
@@ -24,13 +23,17 @@ except ImportError:
 
 class StrictHTMLChecker(HTMLParser):
     """Lightweight HTML syntax checker for missing tags and nesting errors."""
+    # Void elements that don't need closing tags
+    VOID_ELEMENTS = {"meta", "link", "img", "input", "br", "hr", "source", "area", "base", "col", "embed", "param", "track", "wbr"}
+    
     def __init__(self):
         super().__init__()
         self.stack = []
         self.errors = []
     
     def handle_starttag(self, tag, attrs):
-        self.stack.append(tag)
+        if tag not in self.VOID_ELEMENTS:
+            self.stack.append(tag)
     
     def handle_endtag(self, tag):
         if not self.stack:
@@ -78,7 +81,7 @@ class FlexibleFlaskValidator:
         self.warnings = []
         self.checks_passed = 0
         self.total_checks = 0
-        self.validation_results = []  # list of check dicts
+        self.validation_results = []
         self.flask_files = []
         self.template_files = []
         self.main_app_file = None
@@ -149,6 +152,8 @@ class FlexibleFlaskValidator:
                     self._validate_security_rule(rule, points)
                 elif rule_type == "runtime":
                     self._validate_runtime_rule(rule, points)
+                elif rule_type == "boilerplate":
+                    self._validate_boilerplate_rule(rule, points)
                 else:
                     self.log(f"Unknown rule type: {rule_type}", level="WARN")
             except Exception as e:
@@ -179,7 +184,8 @@ class FlexibleFlaskValidator:
             missing_classes = []
             if "mustHaveClasses" in rule:
                 for class_name in rule["mustHaveClasses"]:
-                    if f'class="{class_name}"' not in content and f"class='{class_name}'" not in content:
+                    # Use regex to match class names even when part of multiple classes
+                    if not re.search(r'class=["\'][^"\']*\b' + re.escape(class_name) + r'\b', content):
                         missing_classes.append(class_name)
             
             # Check required content
@@ -222,13 +228,17 @@ class FlexibleFlaskValidator:
                 
                 syntax_issues = checker.errors.copy()
                 
-                # Check for raw special characters (&, <, > not escaped)
-                if re.search(r'(?<!&)([<>])', content):
-                    syntax_issues.append("Unescaped HTML character (< or >) detected.")
+                # Check for raw special characters (&, <, > not escaped) - only flag if outside of tags
+                # This is a simplified check - in practice, this is hard to do reliably with regex
+                # and BeautifulSoup already handles malformed HTML, so we'll skip this check
+                # if re.search(r'(?<!&)([<>])', content):
+                #     syntax_issues.append("Unescaped HTML character (< or >) detected.")
                 
-                # Check for missing quotes around attribute values
-                if re.search(r'=\s*[^\'"][^\s>]*', content):
-                    syntax_issues.append("Missing quotes around one or more attribute values.")
+                # Check for missing quotes around attribute values - be more specific
+                # Only flag if there's an equals sign followed by unquoted value with spaces or special chars
+                # This is a complex check and often produces false positives, so we'll skip it
+                # if re.search(r'=\s*[^\'"\s][^\'"\s]*\s+[^\'"\s]', content):
+                #     syntax_issues.append("Missing quotes around one or more attribute values.")
                 
                 # Optional: Lightweight structure check using BeautifulSoup (if available)
                 try:
@@ -356,6 +366,107 @@ class FlexibleFlaskValidator:
                 
         except Exception as e:
             self.add_check(rule_name, False, 0, f"Error reading file: {e}")
+
+    def _validate_boilerplate_rule(self, rule, points):
+        """Validate structural and naming conformance with defined boilerplate."""
+        file_path = self.project_path / rule["file"]
+        rule_name = f"Boilerplate: {rule['file']}"
+
+        if not file_path.exists():
+            self.add_check(rule_name, False, 0, f"File not found: {rule['file']}")
+            return
+
+        try:
+            from bs4 import BeautifulSoup
+        except ImportError:
+            self.add_check(rule_name, False, 0, "BeautifulSoup required for boilerplate checks (install with pip install beautifulsoup4)")
+            return
+
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+
+            soup = BeautifulSoup(content, "html.parser")
+            expected = rule.get("expected_structure", {})
+
+            def check_structure(tag, spec):
+                """Recursively validate nested HTML structure across all branches."""
+                if not hasattr(tag, "find_all"):
+                    return None
+
+                for sub_tag, sub_spec in spec.items():
+                    found_tags = tag.find_all(sub_tag, recursive=False)
+                    if not found_tags:
+                        return f"Missing <{sub_tag}> inside <{tag.name}>"
+
+                    # Try each matching branch until one passes
+                    branch_ok = False
+                    branch_error = None
+                    for found in found_tags:
+                        error = check_structure(found, sub_spec)
+                        if not error:
+                            branch_ok = True
+                            break
+                        branch_error = error
+
+                    if not branch_ok:
+                        return branch_error or f"Structure mismatch for <{sub_tag}> under <{tag.name}>"
+
+                return None
+
+            structure_error = None
+            for tag_name, sub_spec in expected.items():
+                matches = soup.find_all(tag_name)
+                if not matches:
+                    structure_error = f"Missing top-level <{tag_name}>"
+                    break
+
+                # Validate each occurrence until one matches
+                for tag in matches:
+                    structure_error = check_structure(tag, sub_spec)
+                    if not structure_error:
+                        break
+                if structure_error:
+                    break
+
+            # --- Validate required CSS classes ---
+            missing_classes = []
+            if "required_classes" in rule:
+                for cls in rule["required_classes"]:
+                    if not soup.find(class_=cls):
+                        missing_classes.append(cls)
+
+            # --- Validate required JS functions ---
+            missing_functions = []
+            if "required_functions" in rule:
+                js_files = list(self.project_path.glob("**/*.js"))
+                all_js = ""
+                for js in js_files:
+                    try:
+                        all_js += open(js, "r", encoding="utf-8").read()
+                    except Exception:
+                        continue
+                for func in rule["required_functions"]:
+                    # Regex-based function check for robustness
+                    import re
+                    if not re.search(rf"\bfunction\s+{func}\s*\(", all_js):
+                        missing_functions.append(func)
+
+            # --- Summarize results ---
+            if not structure_error and not missing_classes and not missing_functions:
+                self.add_check(rule_name, True, points, "Boilerplate structure matches expected template.")
+            else:
+                issues = []
+                if structure_error:
+                    issues.append(f"Structure: {structure_error}")
+                if missing_classes:
+                    issues.append(f"Missing classes: {missing_classes}")
+                if missing_functions:
+                    issues.append(f"Missing JS functions: {missing_functions}")
+                self.add_check(rule_name, False, 0, "; ".join(issues))
+
+        except Exception as e:
+            self.add_check(rule_name, False, 0, f"Error during boilerplate validation: {e}")
 
     def auto_install_dependencies(self):
         """

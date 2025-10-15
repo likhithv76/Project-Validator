@@ -1,0 +1,76 @@
+{
+  "rules": [
+    {
+      "type": "boilerplate",
+      "file": "templates/register.html",
+      "expected_structure": {
+        "div": {
+          "div": {
+            "form": {
+              "div": {},
+              "div": {},
+              "button": {}
+            }
+          }
+        }
+      },
+      "required_classes": ["form-container", "submit-btn", "form-group"],
+      "required_functions": ["validateForm", "submitHandler"],
+      "points": 15
+    },
+    {
+      "type": "boilerplate",
+      "file": "templates/login.html",
+      "expected_structure": {
+        "div": {
+          "div": {
+            "form": {
+              "div": {},
+              "div": {},
+              "button": {}
+            }
+          }
+        }
+      },
+      "required_classes": ["login-container", "form-group", "btn-primary"],
+      "required_functions": ["validateLogin"],
+      "points": 10
+    },
+    {
+      "type": "boilerplate",
+      "file": "templates/index.html",
+      "expected_structure": {
+        "div": {
+          "div": {
+            "h1": {},
+            "div": {
+              "p": {}
+            }
+          }
+        }
+      },
+      "required_classes": ["main-container", "content-section", "welcome-text"],
+      "points": 8
+    },
+    {
+      "type": "boilerplate",
+      "file": "templates/dashboard.html",
+      "expected_structure": {
+        "div": {
+          "div": {
+            "h2": {},
+            "div": {
+              "table": {
+                "thead": {},
+                "tbody": {}
+              }
+            }
+          }
+        }
+      },
+      "required_classes": ["dashboard-container", "data-table", "table-header"],
+      "required_functions": ["loadData", "refreshTable"],
+      "points": 20
+    }
+  ]
+}
