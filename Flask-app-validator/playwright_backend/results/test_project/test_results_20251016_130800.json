@@ -1,0 +1,405 @@
+{
+  "timestamp": "2025-10-16T07:38:00.716853Z",
+  "execution_time": 72.34548544883728,
+  "total_tests": 40,
+  "passed_tests": 31,
+  "failed_tests": 9,
+  "results": [
+    {
+      "name": "test_login_form_structure",
+      "status": "PASS",
+      "duration": 3.915219783782959,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_login_page_exists",
+      "status": "FAIL",
+      "duration": 7.239971876144409,
+      "error": "Login page or form should be accessible",
+      "screenshot": null
+    },
+    {
+      "name": "test_login_with_invalid_credentials",
+      "status": "PASS",
+      "duration": 0.710442066192627,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_login_with_valid_credentials",
+      "status": "PASS",
+      "duration": 2.1466941833496094,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_logout_functionality",
+      "status": "PASS",
+      "duration": 1.85453200340271,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_registration_form_structure",
+      "status": "PASS",
+      "duration": 2.2410264015197754,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_registration_page_exists",
+      "status": "FAIL",
+      "duration": 3.574460983276367,
+      "error": "Registration page or form should be accessible",
+      "screenshot": null
+    },
+    {
+      "name": "test_session_persistence",
+      "status": "PASS",
+      "duration": 2.7396912574768066,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "Test File Error: test_basic_navigation.py",
+      "status": "FAIL",
+      "duration": 0.0,
+      "error": "invalid syntax (test_basic_navigation.py, line 13)"
+    },
+    {
+      "name": "test_create_form_exists",
+      "status": "FAIL",
+      "duration": 4.508479118347168,
+      "error": "Create form or page should be accessible",
+      "screenshot": null
+    },
+    {
+      "name": "test_create_form_structure",
+      "status": "PASS",
+      "duration": 1.138340950012207,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_data_persistence",
+      "status": "PASS",
+      "duration": 3.169323444366455,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_delete_functionality",
+      "status": "PASS",
+      "duration": 0.531937837600708,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_form_validation",
+      "status": "PASS",
+      "duration": 1.7135686874389648,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_pagination_or_loading",
+      "status": "PASS",
+      "duration": 2.3761250972747803,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_read_data_display",
+      "status": "PASS",
+      "duration": 0.5072894096374512,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_search_functionality",
+      "status": "PASS",
+      "duration": 2.23960280418396,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_update_functionality",
+      "status": "FAIL",
+      "duration": 1.3421952724456787,
+      "error": "Update functionality should be available",
+      "screenshot": null
+    },
+    {
+      "name": "test_data_consistency",
+      "status": "FAIL",
+      "duration": 1.9786875247955322,
+      "error": "Page.text_content() missing 1 required positional argument: 'selector'",
+      "screenshot": null
+    },
+    {
+      "name": "test_data_creation_persistence",
+      "status": "PASS",
+      "duration": 1.4619591236114502,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_data_relationships",
+      "status": "PASS",
+      "duration": 0.6410975456237793,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_data_retrieval_display",
+      "status": "FAIL",
+      "duration": 1.9272966384887695,
+      "error": "Data should be retrieved and displayed from database",
+      "screenshot": null
+    },
+    {
+      "name": "test_data_validation_integration",
+      "status": "PASS",
+      "duration": 0.5897912979125977,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_database_connection_indicator",
+      "status": "FAIL",
+      "duration": 0.8329901695251465,
+      "error": "Application should show signs of database connectivity",
+      "screenshot": null
+    },
+    {
+      "name": "test_database_error_handling",
+      "status": "PASS",
+      "duration": 5.468927383422852,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_database_performance",
+      "status": "PASS",
+      "duration": 3.1116416454315186,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_database_security",
+      "status": "FAIL",
+      "duration": 0.45798277854919434,
+      "error": "Page.text_content() missing 1 required positional argument: 'selector'",
+      "screenshot": null
+    },
+    {
+      "name": "test_authentication_security",
+      "status": "PASS",
+      "duration": 0.8329043388366699,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_content_security_policy",
+      "status": "PASS",
+      "duration": 0.3852856159210205,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_csrf_protection",
+      "status": "PASS",
+      "duration": 1.0408470630645752,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_error_handling_security",
+      "status": "PASS",
+      "duration": 3.545346736907959,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_file_upload_security",
+      "status": "PASS",
+      "duration": 0.5469329357147217,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_https_redirect",
+      "status": "PASS",
+      "duration": 3.1052303314208984,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_input_validation",
+      "status": "PASS",
+      "duration": 0.9354703426361084,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_secure_cookies",
+      "status": "PASS",
+      "duration": 0.6567034721374512,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_session_security",
+      "status": "PASS",
+      "duration": 0.41466593742370605,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_sql_injection_protection",
+      "status": "PASS",
+      "duration": 1.1147592067718506,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_xss_protection",
+      "status": "PASS",
+      "duration": 0.4190382957458496,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_browser_functionality",
+      "status": "PASS",
+      "duration": 0.12316513061523438,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_simple_page_load",
+      "status": "PASS",
+      "duration": 0.45323753356933594,
+      "error": null,
+      "screenshot": null
+    }
+  ],
+  "logs": [
+    "[2025-10-16T07:36:48.371351Z] [INFO] Playwright initialized successfully",
+    "[2025-10-16T07:36:48.530014Z] [INFO] Browser launched successfully",
+    "[2025-10-16T07:36:48.530995Z] [INFO] Found 6 test files for suite: default",
+    "[2025-10-16T07:36:48.531056Z] [INFO] Running tests from: test_authentication.py",
+    "[2025-10-16T07:36:48.532423Z] [INFO] Found 8 test functions in test_authentication.py",
+    "[2025-10-16T07:36:48.532457Z] [INFO] Running test: test_login_form_structure",
+    "[2025-10-16T07:36:52.447700Z] [INFO] Test test_login_form_structure PASSED in 3.92s",
+    "[2025-10-16T07:36:52.453502Z] [INFO] Running test: test_login_page_exists",
+    "[2025-10-16T07:36:54.432446Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:36:55.475624Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:36:58.330268Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:36:58.743214Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:36:59.693474Z] [ERROR] Test test_login_page_exists FAILED: Login page or form should be accessible",
+    "[2025-10-16T07:36:59.698219Z] [INFO] Running test: test_login_with_invalid_credentials",
+    "[2025-10-16T07:37:00.408666Z] [INFO] Test test_login_with_invalid_credentials PASSED in 0.71s",
+    "[2025-10-16T07:37:00.413024Z] [INFO] Running test: test_login_with_valid_credentials",
+    "[2025-10-16T07:37:02.523185Z] [INFO] Console error: Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "[2025-10-16T07:37:02.559722Z] [INFO] Test test_login_with_valid_credentials PASSED in 2.15s",
+    "[2025-10-16T07:37:02.563170Z] [INFO] Running test: test_logout_functionality",
+    "[2025-10-16T07:37:04.417710Z] [INFO] Test test_logout_functionality PASSED in 1.85s",
+    "[2025-10-16T07:37:04.421040Z] [INFO] Running test: test_registration_form_structure",
+    "[2025-10-16T07:37:06.662032Z] [INFO] Test test_registration_form_structure PASSED in 2.24s",
+    "[2025-10-16T07:37:06.665657Z] [INFO] Running test: test_registration_page_exists",
+    "[2025-10-16T07:37:07.186541Z] [INFO] Console error: Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "[2025-10-16T07:37:07.726996Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:37:08.051521Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:37:09.179025Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:37:10.240123Z] [ERROR] Test test_registration_page_exists FAILED: Registration page or form should be accessible",
+    "[2025-10-16T07:37:10.243735Z] [INFO] Running test: test_session_persistence",
+    "[2025-10-16T07:37:12.983435Z] [INFO] Test test_session_persistence PASSED in 2.74s",
+    "[2025-10-16T07:37:12.987575Z] [INFO] Running tests from: test_basic_navigation.py",
+    "[2025-10-16T07:37:12.989118Z] [ERROR] Error running test file test_basic_navigation.py: invalid syntax (test_basic_navigation.py, line 13)",
+    "[2025-10-16T07:37:12.989177Z] [INFO] Running tests from: test_crud_operations.py",
+    "[2025-10-16T07:37:12.990300Z] [INFO] Found 9 test functions in test_crud_operations.py",
+    "[2025-10-16T07:37:12.990329Z] [INFO] Running test: test_create_form_exists",
+    "[2025-10-16T07:37:14.200381Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:37:14.732128Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:37:15.659121Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:37:16.790671Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:37:17.193929Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:37:17.498817Z] [ERROR] Test test_create_form_exists FAILED: Create form or page should be accessible",
+    "[2025-10-16T07:37:17.502797Z] [INFO] Running test: test_create_form_structure",
+    "[2025-10-16T07:37:18.641140Z] [INFO] Test test_create_form_structure PASSED in 1.14s",
+    "[2025-10-16T07:37:18.645026Z] [INFO] Running test: test_data_persistence",
+    "[2025-10-16T07:37:21.814363Z] [INFO] Test test_data_persistence PASSED in 3.17s",
+    "[2025-10-16T07:37:21.818160Z] [INFO] Running test: test_delete_functionality",
+    "[2025-10-16T07:37:22.350105Z] [INFO] Test test_delete_functionality PASSED in 0.53s",
+    "[2025-10-16T07:37:22.353020Z] [INFO] Running test: test_form_validation",
+    "[2025-10-16T07:37:24.066601Z] [INFO] Test test_form_validation PASSED in 1.71s",
+    "[2025-10-16T07:37:24.070807Z] [INFO] Running test: test_pagination_or_loading",
+    "[2025-10-16T07:37:26.446907Z] [INFO] Test test_pagination_or_loading PASSED in 2.38s",
+    "[2025-10-16T07:37:26.450286Z] [INFO] Running test: test_read_data_display",
+    "[2025-10-16T07:37:26.957564Z] [INFO] Test test_read_data_display PASSED in 0.51s",
+    "[2025-10-16T07:37:26.961182Z] [INFO] Running test: test_search_functionality",
+    "[2025-10-16T07:37:29.200785Z] [INFO] Test test_search_functionality PASSED in 2.24s",
+    "[2025-10-16T07:37:29.204514Z] [INFO] Running test: test_update_functionality",
+    "[2025-10-16T07:37:30.546673Z] [ERROR] Test test_update_functionality FAILED: Update functionality should be available",
+    "[2025-10-16T07:37:30.550924Z] [INFO] Running tests from: test_database_integration.py",
+    "[2025-10-16T07:37:30.552396Z] [INFO] Found 9 test functions in test_database_integration.py",
+    "[2025-10-16T07:37:30.552429Z] [INFO] Running test: test_data_consistency",
+    "[2025-10-16T07:37:32.531131Z] [ERROR] Test test_data_consistency FAILED: Page.text_content() missing 1 required positional argument: 'selector'",
+    "[2025-10-16T07:37:32.547893Z] [INFO] Running test: test_data_creation_persistence",
+    "[2025-10-16T07:37:34.009854Z] [INFO] Test test_data_creation_persistence PASSED in 1.46s",
+    "[2025-10-16T07:37:34.013731Z] [INFO] Running test: test_data_relationships",
+    "[2025-10-16T07:37:34.654831Z] [INFO] Test test_data_relationships PASSED in 0.64s",
+    "[2025-10-16T07:37:34.658955Z] [INFO] Running test: test_data_retrieval_display",
+    "[2025-10-16T07:37:36.586254Z] [ERROR] Test test_data_retrieval_display FAILED: Data should be retrieved and displayed from database",
+    "[2025-10-16T07:37:36.589762Z] [INFO] Running test: test_data_validation_integration",
+    "[2025-10-16T07:37:37.179559Z] [INFO] Test test_data_validation_integration PASSED in 0.59s",
+    "[2025-10-16T07:37:37.184155Z] [INFO] Running test: test_database_connection_indicator",
+    "[2025-10-16T07:37:38.017145Z] [ERROR] Test test_database_connection_indicator FAILED: Application should show signs of database connectivity",
+    "[2025-10-16T07:37:38.021464Z] [INFO] Running test: test_database_error_handling",
+    "[2025-10-16T07:37:41.024663Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:37:41.535254Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:37:43.486647Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:37:43.490396Z] [INFO] Test test_database_error_handling PASSED in 5.47s",
+    "[2025-10-16T07:37:43.497663Z] [INFO] Running test: test_database_performance",
+    "[2025-10-16T07:37:46.609303Z] [INFO] Test test_database_performance PASSED in 3.11s",
+    "[2025-10-16T07:37:46.613124Z] [INFO] Running test: test_database_security",
+    "[2025-10-16T07:37:47.071110Z] [ERROR] Test test_database_security FAILED: Page.text_content() missing 1 required positional argument: 'selector'",
+    "[2025-10-16T07:37:47.088615Z] [INFO] Running tests from: test_security.py",
+    "[2025-10-16T07:37:47.089973Z] [INFO] Found 11 test functions in test_security.py",
+    "[2025-10-16T07:37:47.090004Z] [INFO] Running test: test_authentication_security",
+    "[2025-10-16T07:37:47.922919Z] [INFO] Test test_authentication_security PASSED in 0.83s",
+    "[2025-10-16T07:37:47.927052Z] [INFO] Running test: test_content_security_policy",
+    "[2025-10-16T07:37:48.312343Z] [INFO] Test test_content_security_policy PASSED in 0.39s",
+    "[2025-10-16T07:37:48.317353Z] [INFO] Running test: test_csrf_protection",
+    "[2025-10-16T07:37:49.358204Z] [INFO] Test test_csrf_protection PASSED in 1.04s",
+    "[2025-10-16T07:37:49.361515Z] [INFO] Running test: test_error_handling_security",
+    "[2025-10-16T07:37:49.728656Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:37:50.148657Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:37:50.447945Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:37:52.290861Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:37:52.902088Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:37:52.906870Z] [INFO] Test test_error_handling_security PASSED in 3.55s",
+    "[2025-10-16T07:37:52.911442Z] [INFO] Running test: test_file_upload_security",
+    "[2025-10-16T07:37:53.458379Z] [INFO] Test test_file_upload_security PASSED in 0.55s",
+    "[2025-10-16T07:37:53.462028Z] [INFO] Running test: test_https_redirect",
+    "[2025-10-16T07:37:56.567261Z] [INFO] Test test_https_redirect PASSED in 3.11s",
+    "[2025-10-16T07:37:56.571831Z] [INFO] Running test: test_input_validation",
+    "[2025-10-16T07:37:57.507308Z] [INFO] Test test_input_validation PASSED in 0.94s",
+    "[2025-10-16T07:37:57.511327Z] [INFO] Running test: test_secure_cookies",
+    "[2025-10-16T07:37:58.168039Z] [INFO] Test test_secure_cookies PASSED in 0.66s",
+    "[2025-10-16T07:37:58.171625Z] [INFO] Running test: test_session_security",
+    "[2025-10-16T07:37:58.586297Z] [INFO] Test test_session_security PASSED in 0.41s",
+    "[2025-10-16T07:37:58.589551Z] [INFO] Running test: test_sql_injection_protection",
+    "[2025-10-16T07:37:59.704269Z] [INFO] Test test_sql_injection_protection PASSED in 1.11s",
+    "[2025-10-16T07:37:59.707375Z] [INFO] Running test: test_xss_protection",
+    "[2025-10-16T07:38:00.126409Z] [INFO] Test test_xss_protection PASSED in 0.42s",
+    "[2025-10-16T07:38:00.129999Z] [INFO] Running tests from: test_simple.py",
+    "[2025-10-16T07:38:00.131215Z] [INFO] Found 2 test functions in test_simple.py",
+    "[2025-10-16T07:38:00.131244Z] [INFO] Running test: test_browser_functionality",
+    "[2025-10-16T07:38:00.254422Z] [INFO] Test test_browser_functionality PASSED in 0.12s",
+    "[2025-10-16T07:38:00.258876Z] [INFO] Running test: test_simple_page_load",
+    "[2025-10-16T07:38:00.712121Z] [INFO] Test test_simple_page_load PASSED in 0.45s"
+  ]
+}

@@ -1,0 +1,383 @@
+{
+  "timestamp": "2025-10-16T07:36:12.530498Z",
+  "execution_time": 0.19816207885742188,
+  "total_tests": 40,
+  "passed_tests": 0,
+  "failed_tests": 40,
+  "results": [
+    {
+      "name": "test_login_form_structure",
+      "status": "FAIL",
+      "duration": 2.4080276489257812e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_login_page_exists",
+      "status": "FAIL",
+      "duration": 1.4781951904296875e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_login_with_invalid_credentials",
+      "status": "FAIL",
+      "duration": 1.1682510375976562e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_login_with_valid_credentials",
+      "status": "FAIL",
+      "duration": 1.2874603271484375e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_logout_functionality",
+      "status": "FAIL",
+      "duration": 1.0967254638671875e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_registration_form_structure",
+      "status": "FAIL",
+      "duration": 1.1682510375976562e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_registration_page_exists",
+      "status": "FAIL",
+      "duration": 1.0728836059570312e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_session_persistence",
+      "status": "FAIL",
+      "duration": 1.3828277587890625e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "Test File Error: test_basic_navigation.py",
+      "status": "FAIL",
+      "duration": 0.0,
+      "error": "invalid syntax (test_basic_navigation.py, line 13)"
+    },
+    {
+      "name": "test_create_form_exists",
+      "status": "FAIL",
+      "duration": 2.4080276489257812e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_create_form_structure",
+      "status": "FAIL",
+      "duration": 1.239776611328125e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_data_persistence",
+      "status": "FAIL",
+      "duration": 1.239776611328125e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_delete_functionality",
+      "status": "FAIL",
+      "duration": 1.4066696166992188e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_form_validation",
+      "status": "FAIL",
+      "duration": 1.3113021850585938e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_pagination_or_loading",
+      "status": "FAIL",
+      "duration": 1.3113021850585938e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_read_data_display",
+      "status": "FAIL",
+      "duration": 1.2874603271484375e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_search_functionality",
+      "status": "FAIL",
+      "duration": 1.1920928955078125e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_update_functionality",
+      "status": "FAIL",
+      "duration": 4.0531158447265625e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_data_consistency",
+      "status": "FAIL",
+      "duration": 2.5272369384765625e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_data_creation_persistence",
+      "status": "FAIL",
+      "duration": 1.239776611328125e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_data_relationships",
+      "status": "FAIL",
+      "duration": 1.0728836059570312e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_data_retrieval_display",
+      "status": "FAIL",
+      "duration": 1.0251998901367188e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_data_validation_integration",
+      "status": "FAIL",
+      "duration": 1.0728836059570312e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_database_connection_indicator",
+      "status": "FAIL",
+      "duration": 1.1444091796875e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_database_error_handling",
+      "status": "FAIL",
+      "duration": 1.049041748046875e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_database_performance",
+      "status": "FAIL",
+      "duration": 1.0251998901367188e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_database_security",
+      "status": "FAIL",
+      "duration": 1.049041748046875e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_authentication_security",
+      "status": "FAIL",
+      "duration": 2.0265579223632812e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_content_security_policy",
+      "status": "FAIL",
+      "duration": 1.1682510375976562e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_csrf_protection",
+      "status": "FAIL",
+      "duration": 1.0013580322265625e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_error_handling_security",
+      "status": "FAIL",
+      "duration": 1.3828277587890625e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_file_upload_security",
+      "status": "FAIL",
+      "duration": 1.0728836059570312e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_https_redirect",
+      "status": "FAIL",
+      "duration": 1.0251998901367188e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_input_validation",
+      "status": "FAIL",
+      "duration": 9.298324584960938e-06,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_secure_cookies",
+      "status": "FAIL",
+      "duration": 7.700920104980469e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_session_security",
+      "status": "FAIL",
+      "duration": 1.1444091796875e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_sql_injection_protection",
+      "status": "FAIL",
+      "duration": 1.0967254638671875e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_xss_protection",
+      "status": "FAIL",
+      "duration": 1.0013580322265625e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_browser_functionality",
+      "status": "FAIL",
+      "duration": 2.4318695068359375e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    },
+    {
+      "name": "test_simple_page_load",
+      "status": "FAIL",
+      "duration": 1.52587890625e-05,
+      "error": "'BrowserContext' object has no attribute '_is_closed'",
+      "screenshot": null
+    }
+  ],
+  "logs": [
+    "[2025-10-16T07:36:12.332306Z] [INFO] Playwright initialized successfully",
+    "[2025-10-16T07:36:12.509715Z] [INFO] Browser launched successfully",
+    "[2025-10-16T07:36:12.510571Z] [INFO] Found 6 test files for suite: default",
+    "[2025-10-16T07:36:12.510631Z] [INFO] Running tests from: test_authentication.py",
+    "[2025-10-16T07:36:12.511931Z] [INFO] Found 8 test functions in test_authentication.py",
+    "[2025-10-16T07:36:12.511965Z] [INFO] Running test: test_login_form_structure",
+    "[2025-10-16T07:36:12.511992Z] [ERROR] Test test_login_form_structure FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.512014Z] [INFO] Running test: test_login_page_exists",
+    "[2025-10-16T07:36:12.512029Z] [ERROR] Test test_login_page_exists FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.512042Z] [INFO] Running test: test_login_with_invalid_credentials",
+    "[2025-10-16T07:36:12.512054Z] [ERROR] Test test_login_with_invalid_credentials FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.512074Z] [INFO] Running test: test_login_with_valid_credentials",
+    "[2025-10-16T07:36:12.512087Z] [ERROR] Test test_login_with_valid_credentials FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.512098Z] [INFO] Running test: test_logout_functionality",
+    "[2025-10-16T07:36:12.512109Z] [ERROR] Test test_logout_functionality FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.512125Z] [INFO] Running test: test_registration_form_structure",
+    "[2025-10-16T07:36:12.512138Z] [ERROR] Test test_registration_form_structure FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.512149Z] [INFO] Running test: test_registration_page_exists",
+    "[2025-10-16T07:36:12.512160Z] [ERROR] Test test_registration_page_exists FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.512172Z] [INFO] Running test: test_session_persistence",
+    "[2025-10-16T07:36:12.512186Z] [ERROR] Test test_session_persistence FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.512228Z] [INFO] Running tests from: test_basic_navigation.py",
+    "[2025-10-16T07:36:12.513700Z] [ERROR] Error running test file test_basic_navigation.py: invalid syntax (test_basic_navigation.py, line 13)",
+    "[2025-10-16T07:36:12.513800Z] [INFO] Running tests from: test_crud_operations.py",
+    "[2025-10-16T07:36:12.515567Z] [INFO] Found 9 test functions in test_crud_operations.py",
+    "[2025-10-16T07:36:12.515610Z] [INFO] Running test: test_create_form_exists",
+    "[2025-10-16T07:36:12.515634Z] [ERROR] Test test_create_form_exists FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.515651Z] [INFO] Running test: test_create_form_structure",
+    "[2025-10-16T07:36:12.515664Z] [ERROR] Test test_create_form_structure FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.515678Z] [INFO] Running test: test_data_persistence",
+    "[2025-10-16T07:36:12.515691Z] [ERROR] Test test_data_persistence FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.515707Z] [INFO] Running test: test_delete_functionality",
+    "[2025-10-16T07:36:12.515721Z] [ERROR] Test test_delete_functionality FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.515735Z] [INFO] Running test: test_form_validation",
+    "[2025-10-16T07:36:12.515749Z] [ERROR] Test test_form_validation FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.515763Z] [INFO] Running test: test_pagination_or_loading",
+    "[2025-10-16T07:36:12.515777Z] [ERROR] Test test_pagination_or_loading FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.515794Z] [INFO] Running test: test_read_data_display",
+    "[2025-10-16T07:36:12.515807Z] [ERROR] Test test_read_data_display FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.515821Z] [INFO] Running test: test_search_functionality",
+    "[2025-10-16T07:36:12.515833Z] [ERROR] Test test_search_functionality FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.516210Z] [INFO] Running test: test_update_functionality",
+    "[2025-10-16T07:36:12.516246Z] [ERROR] Test test_update_functionality FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.516301Z] [INFO] Running tests from: test_database_integration.py",
+    "[2025-10-16T07:36:12.525318Z] [INFO] Found 9 test functions in test_database_integration.py",
+    "[2025-10-16T07:36:12.525364Z] [INFO] Running test: test_data_consistency",
+    "[2025-10-16T07:36:12.525391Z] [ERROR] Test test_data_consistency FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.525408Z] [INFO] Running test: test_data_creation_persistence",
+    "[2025-10-16T07:36:12.525420Z] [ERROR] Test test_data_creation_persistence FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.525432Z] [INFO] Running test: test_data_relationships",
+    "[2025-10-16T07:36:12.525443Z] [ERROR] Test test_data_relationships FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.525454Z] [INFO] Running test: test_data_retrieval_display",
+    "[2025-10-16T07:36:12.525465Z] [ERROR] Test test_data_retrieval_display FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.525479Z] [INFO] Running test: test_data_validation_integration",
+    "[2025-10-16T07:36:12.525491Z] [ERROR] Test test_data_validation_integration FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.525503Z] [INFO] Running test: test_database_connection_indicator",
+    "[2025-10-16T07:36:12.525513Z] [ERROR] Test test_database_connection_indicator FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.525525Z] [INFO] Running test: test_database_error_handling",
+    "[2025-10-16T07:36:12.525536Z] [ERROR] Test test_database_error_handling FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.525546Z] [INFO] Running test: test_database_performance",
+    "[2025-10-16T07:36:12.525557Z] [ERROR] Test test_database_performance FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.525569Z] [INFO] Running test: test_database_security",
+    "[2025-10-16T07:36:12.525580Z] [ERROR] Test test_database_security FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.525628Z] [INFO] Running tests from: test_security.py",
+    "[2025-10-16T07:36:12.526855Z] [INFO] Found 11 test functions in test_security.py",
+    "[2025-10-16T07:36:12.526886Z] [INFO] Running test: test_authentication_security",
+    "[2025-10-16T07:36:12.526908Z] [ERROR] Test test_authentication_security FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.526923Z] [INFO] Running test: test_content_security_policy",
+    "[2025-10-16T07:36:12.526935Z] [ERROR] Test test_content_security_policy FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.526946Z] [INFO] Running test: test_csrf_protection",
+    "[2025-10-16T07:36:12.526957Z] [ERROR] Test test_csrf_protection FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.526968Z] [INFO] Running test: test_error_handling_security",
+    "[2025-10-16T07:36:12.526982Z] [ERROR] Test test_error_handling_security FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.526995Z] [INFO] Running test: test_file_upload_security",
+    "[2025-10-16T07:36:12.527007Z] [ERROR] Test test_file_upload_security FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.527019Z] [INFO] Running test: test_https_redirect",
+    "[2025-10-16T07:36:12.527029Z] [ERROR] Test test_https_redirect FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.527040Z] [INFO] Running test: test_input_validation",
+    "[2025-10-16T07:36:12.527050Z] [ERROR] Test test_input_validation FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.527061Z] [INFO] Running test: test_secure_cookies",
+    "[2025-10-16T07:36:12.527144Z] [ERROR] Test test_secure_cookies FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.527158Z] [INFO] Running test: test_session_security",
+    "[2025-10-16T07:36:12.527170Z] [ERROR] Test test_session_security FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.527181Z] [INFO] Running test: test_sql_injection_protection",
+    "[2025-10-16T07:36:12.527193Z] [ERROR] Test test_sql_injection_protection FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.527204Z] [INFO] Running test: test_xss_protection",
+    "[2025-10-16T07:36:12.527215Z] [ERROR] Test test_xss_protection FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.527257Z] [INFO] Running tests from: test_simple.py",
+    "[2025-10-16T07:36:12.530315Z] [INFO] Found 2 test functions in test_simple.py",
+    "[2025-10-16T07:36:12.530354Z] [INFO] Running test: test_browser_functionality",
+    "[2025-10-16T07:36:12.530378Z] [ERROR] Test test_browser_functionality FAILED: 'BrowserContext' object has no attribute '_is_closed'",
+    "[2025-10-16T07:36:12.530396Z] [INFO] Running test: test_simple_page_load",
+    "[2025-10-16T07:36:12.530412Z] [ERROR] Test test_simple_page_load FAILED: 'BrowserContext' object has no attribute '_is_closed'"
+  ]
+}

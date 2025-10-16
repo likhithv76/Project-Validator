@@ -1,0 +1,225 @@
+{
+  "rules": [
+    {
+      "type": "html",
+      "file": "templates/base.html",
+      "mustHaveElements": ["nav", "footer"],
+      "mustHaveClasses": ["navbar", "container"], 
+      "points": 10
+    },
+    {
+      "type": "html",
+      "file": "templates/index.html",
+      "mustHaveElements": [ "a"],
+      "mustHaveContent": ["Welcome to Flask Auth", "Get Started", "Login"],
+      "points": 8
+    },
+    {
+      "type": "html",
+      "file": "templates/login.html",
+      "mustHaveElements": ["form", "input", "button"],
+      "mustHaveInputs": ["username", "password"],
+      "mustHaveContent": ["Login", "Register here"],
+      "points": 8
+    },
+    {
+      "type": "html",
+      "file": "templates/register.html",
+      "mustHaveElements": ["form", "input", "button"],
+      "mustHaveInputs": ["username", "email", "password", "confirm_password"],
+      "mustHaveContent": ["Create Account", "Login here"],
+      "points": 8
+    },
+    {
+      "type": "html",
+      "file": "templates/dashboard.html",
+      "mustHaveElements": ["div", "h4", "h5"],
+      "mustHaveClasses": ["card", "card-header", "card-body"],
+      "mustHaveContent": ["Dashboard", "Welcome back"],
+      "points": 8
+    },
+    {
+      "type": "html",
+      "file": "templates/profile.html",
+      "mustHaveElements": ["div", "h4", "h5"],
+      "mustHaveClasses": ["card", "card-header", "card-body"],
+      "mustHaveContent": ["User Profile", "Account Details"],
+      "points": 8
+    },
+    {
+      "type": "requirements",
+      "file": "requirements.txt",
+      "mustHavePackages": ["Flask", "Flask-SQLAlchemy", "Werkzeug"],
+      "points": 5
+    },
+    {
+      "type": "database",
+      "file": "instance/users.db",
+      "mustExist": true,
+      "points": 5
+    },
+      {
+        "type": "security",
+        "file": "app.py",
+        "mustHaveSecurity": ["password hashing", "session management", "user validation"],
+        "points": 10
+      },
+      {
+        "type": "runtime",
+        "file": "app.py",
+        "mustHaveRoutes": ["/", "/register", "/login", "/logout", "/profile"],
+        "points": 25
+      },
+      {
+        "type": "boilerplate",
+        "file": "templates/register.html",
+        "expected_structure": {
+          "div": {
+            "div": {
+              "form": {
+                "div": {},
+                "div": {},
+                "button": {}
+              }
+            }
+          }
+        },
+        "required_classes": ["form-container", "submit-btn", "form-group"],
+        "required_functions": ["validateForm", "submitHandler"],
+        "points": 15
+      },
+      {
+        "type": "boilerplate",
+        "file": "templates/login.html",
+        "expected_structure": {
+          "div": {
+            "div": {
+              "form": {
+                "div": {},
+                "div": {},
+                "button": {}
+              }
+            }
+          }
+        },
+        "required_classes": ["login-container", "form-group", "btn-primary"],
+        "required_functions": ["validateLogin"],
+        "points": 10
+      },
+      {
+        "type": "boilerplate",
+        "file": "templates/index.html",
+        "expected_structure": {
+          "div": {
+            "div": {
+              "h1": {},
+              "div": {
+                "p": {}
+              }
+            }
+          }
+        },
+        "required_classes": ["main-container", "content-section", "welcome-text"],
+        "points": 8
+      },
+      {
+        "type": "boilerplate",
+        "file": "templates/dashboard.html",
+        "expected_structure": {
+          "div": {
+            "div": {
+              "h2": {},
+              "div": {
+                "table": {
+                  "thead": {},
+                  "tbody": {}
+                }
+              }
+            }
+          }
+        },
+        "required_classes": ["dashboard-container", "data-table", "table-header"],
+        "required_functions": ["loadData", "refreshTable"],
+        "points": 20
+      },
+      {
+        "type": "boilerplate",
+        "file": "app.py",
+        "expected_structure": {
+          "imports": [
+            "flask",
+            "flask_sqlalchemy",
+            "werkzeug.security",
+            "datetime",
+            "os"
+          ],
+          "classes": {
+            "User": {
+              "attributes": ["id", "username", "email", "password_hash", "created_at"],
+              "methods": ["set_password", "check_password", "__repr__"]
+            }
+          },
+          "routes": {
+            "/": {
+              "methods": ["GET"],
+              "renders": ["index.html", "dashboard.html"]
+            },
+            "/register": {
+              "methods": ["GET", "POST"],
+              "renders": ["register.html"]
+            },
+            "/login": {
+              "methods": ["GET", "POST"],
+              "renders": ["login.html"]
+            },
+            "/logout": {
+              "methods": ["GET"],
+              "redirects_to": ["index"]
+            },
+            "/profile": {
+              "methods": ["GET"],
+              "renders": ["profile.html"]
+            }
+          }
+        },
+        "required_functions": [
+          "set_password",
+          "check_password",
+          "index",
+          "register",
+          "login",
+          "logout",
+          "profile"
+        ],
+        "required_security": {
+          "secret_key": true,
+          "password_hashing": true,
+          "session_management": true
+        },
+        "required_files": [
+          "templates/index.html",
+          "templates/register.html",
+          "templates/login.html",
+          "templates/dashboard.html",
+          "templates/profile.html",
+          "instance/users.db"
+        ],
+        "required_flask_components": [
+          "Flask",
+          "SQLAlchemy",
+          "render_template",
+          "redirect",
+          "url_for",
+          "flash",
+          "session"
+        ],
+        "validation_rules": {
+          "must_define_db": true,
+          "must_call_db_create_all": true,
+          "must_use_flask_app_context": true,
+          "must_run_app": true
+        },
+        "points": 30
+      }      
+  ]
+}

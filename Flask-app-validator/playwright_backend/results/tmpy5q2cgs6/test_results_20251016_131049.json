@@ -1,0 +1,401 @@
+{
+  "timestamp": "2025-10-16T07:40:49.529566Z",
+  "execution_time": 8.311145782470703,
+  "total_tests": 40,
+  "passed_tests": 34,
+  "failed_tests": 6,
+  "results": [
+    {
+      "name": "test_login_form_structure",
+      "status": "PASS",
+      "duration": 0.42220044136047363,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_login_page_exists",
+      "status": "PASS",
+      "duration": 0.16782498359680176,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_login_with_invalid_credentials",
+      "status": "PASS",
+      "duration": 0.16997194290161133,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_login_with_valid_credentials",
+      "status": "PASS",
+      "duration": 0.1993105411529541,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_logout_functionality",
+      "status": "FAIL",
+      "duration": 0.11775732040405273,
+      "error": "Page.goto: net::ERR_CONNECTION_RESET at http://127.0.0.1:5000/\nCall log:\n  - navigating to \"http://127.0.0.1:5000/\", waiting until \"load\"\n",
+      "screenshot": "C:\\Users\\lvg\\CODES\\Project-Validator\\Flask-app-validator\\playwright_backend\\results\\tmpy5q2cgs6\\screenshots\\test_logout_functionality_20251016_131042.png"
+    },
+    {
+      "name": "test_registration_form_structure",
+      "status": "PASS",
+      "duration": 0.21282958984375,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_registration_page_exists",
+      "status": "PASS",
+      "duration": 0.15087509155273438,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_session_persistence",
+      "status": "PASS",
+      "duration": 0.1680450439453125,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "Test File Error: test_basic_navigation.py",
+      "status": "FAIL",
+      "duration": 0.0,
+      "error": "invalid syntax (test_basic_navigation.py, line 13)"
+    },
+    {
+      "name": "test_create_form_exists",
+      "status": "FAIL",
+      "duration": 0.2925143241882324,
+      "error": "Create form or page should be accessible",
+      "screenshot": "C:\\Users\\lvg\\CODES\\Project-Validator\\Flask-app-validator\\playwright_backend\\results\\tmpy5q2cgs6\\screenshots\\test_create_form_exists_20251016_131043.png"
+    },
+    {
+      "name": "test_create_form_structure",
+      "status": "PASS",
+      "duration": 0.16577887535095215,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_data_persistence",
+      "status": "PASS",
+      "duration": 0.1649026870727539,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_delete_functionality",
+      "status": "PASS",
+      "duration": 0.2102205753326416,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_form_validation",
+      "status": "PASS",
+      "duration": 0.18532919883728027,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_pagination_or_loading",
+      "status": "PASS",
+      "duration": 0.22939443588256836,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_read_data_display",
+      "status": "PASS",
+      "duration": 0.18686318397521973,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_search_functionality",
+      "status": "PASS",
+      "duration": 0.1900331974029541,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_update_functionality",
+      "status": "FAIL",
+      "duration": 0.19546818733215332,
+      "error": "Update functionality should be available",
+      "screenshot": "C:\\Users\\lvg\\CODES\\Project-Validator\\Flask-app-validator\\playwright_backend\\results\\tmpy5q2cgs6\\screenshots\\test_update_functionality_20251016_131045.png"
+    },
+    {
+      "name": "test_data_consistency",
+      "status": "FAIL",
+      "duration": 0.141984224319458,
+      "error": "Page.text_content() missing 1 required positional argument: 'selector'",
+      "screenshot": "C:\\Users\\lvg\\CODES\\Project-Validator\\Flask-app-validator\\playwright_backend\\results\\tmpy5q2cgs6\\screenshots\\test_data_consistency_20251016_131045.png"
+    },
+    {
+      "name": "test_data_creation_persistence",
+      "status": "PASS",
+      "duration": 0.17554116249084473,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_data_relationships",
+      "status": "PASS",
+      "duration": 0.21895408630371094,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_data_retrieval_display",
+      "status": "PASS",
+      "duration": 0.1921846866607666,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_data_validation_integration",
+      "status": "PASS",
+      "duration": 0.20815515518188477,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_database_connection_indicator",
+      "status": "PASS",
+      "duration": 0.19394779205322266,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_database_error_handling",
+      "status": "PASS",
+      "duration": 0.20401763916015625,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_database_performance",
+      "status": "PASS",
+      "duration": 0.2028794288635254,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_database_security",
+      "status": "FAIL",
+      "duration": 0.10518097877502441,
+      "error": "Page.text_content() missing 1 required positional argument: 'selector'",
+      "screenshot": "C:\\Users\\lvg\\CODES\\Project-Validator\\Flask-app-validator\\playwright_backend\\results\\tmpy5q2cgs6\\screenshots\\test_database_security_20251016_131047.png"
+    },
+    {
+      "name": "test_authentication_security",
+      "status": "PASS",
+      "duration": 0.17182540893554688,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_content_security_policy",
+      "status": "PASS",
+      "duration": 0.17762231826782227,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_csrf_protection",
+      "status": "PASS",
+      "duration": 0.16538500785827637,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_error_handling_security",
+      "status": "PASS",
+      "duration": 0.17359066009521484,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_file_upload_security",
+      "status": "PASS",
+      "duration": 0.18706607818603516,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_https_redirect",
+      "status": "PASS",
+      "duration": 0.12426066398620605,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_input_validation",
+      "status": "PASS",
+      "duration": 0.1871030330657959,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_secure_cookies",
+      "status": "PASS",
+      "duration": 0.15425515174865723,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_session_security",
+      "status": "PASS",
+      "duration": 0.1941089630126953,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_sql_injection_protection",
+      "status": "PASS",
+      "duration": 0.16498112678527832,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_xss_protection",
+      "status": "PASS",
+      "duration": 0.19009804725646973,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_browser_functionality",
+      "status": "PASS",
+      "duration": 0.1194601058959961,
+      "error": null,
+      "screenshot": null
+    },
+    {
+      "name": "test_simple_page_load",
+      "status": "PASS",
+      "duration": 0.15662002563476562,
+      "error": null,
+      "screenshot": null
+    }
+  ],
+  "logs": [
+    "[2025-10-16T07:40:41.218294Z] [INFO] Playwright initialized successfully",
+    "[2025-10-16T07:40:41.395192Z] [INFO] Browser launched successfully",
+    "[2025-10-16T07:40:41.396142Z] [INFO] Found 6 test files for suite: default",
+    "[2025-10-16T07:40:41.396296Z] [INFO] Running tests from: test_authentication.py",
+    "[2025-10-16T07:40:41.397780Z] [INFO] Found 8 test functions in test_authentication.py",
+    "[2025-10-16T07:40:41.397905Z] [INFO] Running test: test_login_form_structure",
+    "[2025-10-16T07:40:41.820126Z] [INFO] Test test_login_form_structure PASSED in 0.42s",
+    "[2025-10-16T07:40:41.827557Z] [INFO] Running test: test_login_page_exists",
+    "[2025-10-16T07:40:41.995385Z] [INFO] Test test_login_page_exists PASSED in 0.17s",
+    "[2025-10-16T07:40:42.000661Z] [INFO] Running test: test_login_with_invalid_credentials",
+    "[2025-10-16T07:40:42.170635Z] [INFO] Test test_login_with_invalid_credentials PASSED in 0.17s",
+    "[2025-10-16T07:40:42.175618Z] [INFO] Running test: test_login_with_valid_credentials",
+    "[2025-10-16T07:40:42.375017Z] [INFO] Test test_login_with_valid_credentials PASSED in 0.20s",
+    "[2025-10-16T07:40:42.382684Z] [INFO] Running test: test_logout_functionality",
+    "[2025-10-16T07:40:42.500438Z] [ERROR] Test test_logout_functionality FAILED: Page.goto: net::ERR_CONNECTION_RESET at http://127.0.0.1:5000/\nCall log:\n  - navigating to \"http://127.0.0.1:5000/\", waiting until \"load\"\n",
+    "[2025-10-16T07:40:42.682420Z] [INFO] Screenshot saved: C:\\Users\\lvg\\CODES\\Project-Validator\\Flask-app-validator\\playwright_backend\\results\\tmpy5q2cgs6\\screenshots\\test_logout_functionality_20251016_131042.png",
+    "[2025-10-16T07:40:42.687535Z] [INFO] Running test: test_registration_form_structure",
+    "[2025-10-16T07:40:42.900369Z] [INFO] Test test_registration_form_structure PASSED in 0.21s",
+    "[2025-10-16T07:40:42.905598Z] [INFO] Running test: test_registration_page_exists",
+    "[2025-10-16T07:40:43.056484Z] [INFO] Test test_registration_page_exists PASSED in 0.15s",
+    "[2025-10-16T07:40:43.061620Z] [INFO] Running test: test_session_persistence",
+    "[2025-10-16T07:40:43.229667Z] [INFO] Test test_session_persistence PASSED in 0.17s",
+    "[2025-10-16T07:40:43.233718Z] [INFO] Running tests from: test_basic_navigation.py",
+    "[2025-10-16T07:40:43.235267Z] [ERROR] Error running test file test_basic_navigation.py: invalid syntax (test_basic_navigation.py, line 13)",
+    "[2025-10-16T07:40:43.235447Z] [INFO] Running tests from: test_crud_operations.py",
+    "[2025-10-16T07:40:43.236835Z] [INFO] Found 9 test functions in test_crud_operations.py",
+    "[2025-10-16T07:40:43.237005Z] [INFO] Running test: test_create_form_exists",
+    "[2025-10-16T07:40:43.330432Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:40:43.349137Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:40:43.365891Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:40:43.381190Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:40:43.396635Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:40:43.529531Z] [ERROR] Test test_create_form_exists FAILED: Create form or page should be accessible",
+    "[2025-10-16T07:40:43.640128Z] [INFO] Screenshot saved: C:\\Users\\lvg\\CODES\\Project-Validator\\Flask-app-validator\\playwright_backend\\results\\tmpy5q2cgs6\\screenshots\\test_create_form_exists_20251016_131043.png",
+    "[2025-10-16T07:40:43.644851Z] [INFO] Running test: test_create_form_structure",
+    "[2025-10-16T07:40:43.810642Z] [INFO] Test test_create_form_structure PASSED in 0.17s",
+    "[2025-10-16T07:40:43.815007Z] [INFO] Running test: test_data_persistence",
+    "[2025-10-16T07:40:43.979917Z] [INFO] Test test_data_persistence PASSED in 0.16s",
+    "[2025-10-16T07:40:43.984280Z] [INFO] Running test: test_delete_functionality",
+    "[2025-10-16T07:40:44.194506Z] [INFO] Test test_delete_functionality PASSED in 0.21s",
+    "[2025-10-16T07:40:44.198709Z] [INFO] Running test: test_form_validation",
+    "[2025-10-16T07:40:44.384042Z] [INFO] Test test_form_validation PASSED in 0.19s",
+    "[2025-10-16T07:40:44.388250Z] [INFO] Running test: test_pagination_or_loading",
+    "[2025-10-16T07:40:44.617650Z] [INFO] Test test_pagination_or_loading PASSED in 0.23s",
+    "[2025-10-16T07:40:44.621853Z] [INFO] Running test: test_read_data_display",
+    "[2025-10-16T07:40:44.808723Z] [INFO] Test test_read_data_display PASSED in 0.19s",
+    "[2025-10-16T07:40:44.814366Z] [INFO] Running test: test_search_functionality",
+    "[2025-10-16T07:40:45.004403Z] [INFO] Test test_search_functionality PASSED in 0.19s",
+    "[2025-10-16T07:40:45.010406Z] [INFO] Running test: test_update_functionality",
+    "[2025-10-16T07:40:45.205874Z] [ERROR] Test test_update_functionality FAILED: Update functionality should be available",
+    "[2025-10-16T07:40:45.318639Z] [INFO] Screenshot saved: C:\\Users\\lvg\\CODES\\Project-Validator\\Flask-app-validator\\playwright_backend\\results\\tmpy5q2cgs6\\screenshots\\test_update_functionality_20251016_131045.png",
+    "[2025-10-16T07:40:45.324280Z] [INFO] Running tests from: test_database_integration.py",
+    "[2025-10-16T07:40:45.326133Z] [INFO] Found 9 test functions in test_database_integration.py",
+    "[2025-10-16T07:40:45.326320Z] [INFO] Running test: test_data_consistency",
+    "[2025-10-16T07:40:45.468307Z] [ERROR] Test test_data_consistency FAILED: Page.text_content() missing 1 required positional argument: 'selector'",
+    "[2025-10-16T07:40:45.582146Z] [INFO] Screenshot saved: C:\\Users\\lvg\\CODES\\Project-Validator\\Flask-app-validator\\playwright_backend\\results\\tmpy5q2cgs6\\screenshots\\test_data_consistency_20251016_131045.png",
+    "[2025-10-16T07:40:45.586670Z] [INFO] Running test: test_data_creation_persistence",
+    "[2025-10-16T07:40:45.762218Z] [INFO] Test test_data_creation_persistence PASSED in 0.18s",
+    "[2025-10-16T07:40:45.767815Z] [INFO] Running test: test_data_relationships",
+    "[2025-10-16T07:40:45.986774Z] [INFO] Test test_data_relationships PASSED in 0.22s",
+    "[2025-10-16T07:40:45.991514Z] [INFO] Running test: test_data_retrieval_display",
+    "[2025-10-16T07:40:46.183701Z] [INFO] Test test_data_retrieval_display PASSED in 0.19s",
+    "[2025-10-16T07:40:46.189306Z] [INFO] Running test: test_data_validation_integration",
+    "[2025-10-16T07:40:46.397468Z] [INFO] Test test_data_validation_integration PASSED in 0.21s",
+    "[2025-10-16T07:40:46.401992Z] [INFO] Running test: test_database_connection_indicator",
+    "[2025-10-16T07:40:46.595943Z] [INFO] Test test_database_connection_indicator PASSED in 0.19s",
+    "[2025-10-16T07:40:46.601015Z] [INFO] Running test: test_database_error_handling",
+    "[2025-10-16T07:40:46.766557Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:40:46.782382Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:40:46.801275Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:40:46.805035Z] [INFO] Test test_database_error_handling PASSED in 0.20s",
+    "[2025-10-16T07:40:46.813415Z] [INFO] Running test: test_database_performance",
+    "[2025-10-16T07:40:47.016307Z] [INFO] Test test_database_performance PASSED in 0.20s",
+    "[2025-10-16T07:40:47.020026Z] [INFO] Running test: test_database_security",
+    "[2025-10-16T07:40:47.125211Z] [ERROR] Test test_database_security FAILED: Page.text_content() missing 1 required positional argument: 'selector'",
+    "[2025-10-16T07:40:47.282332Z] [INFO] Screenshot saved: C:\\Users\\lvg\\CODES\\Project-Validator\\Flask-app-validator\\playwright_backend\\results\\tmpy5q2cgs6\\screenshots\\test_database_security_20251016_131047.png",
+    "[2025-10-16T07:40:47.286909Z] [INFO] Running tests from: test_security.py",
+    "[2025-10-16T07:40:47.288631Z] [INFO] Found 11 test functions in test_security.py",
+    "[2025-10-16T07:40:47.288787Z] [INFO] Running test: test_authentication_security",
+    "[2025-10-16T07:40:47.460620Z] [INFO] Test test_authentication_security PASSED in 0.17s",
+    "[2025-10-16T07:40:47.464681Z] [INFO] Running test: test_content_security_policy",
+    "[2025-10-16T07:40:47.642310Z] [INFO] Test test_content_security_policy PASSED in 0.18s",
+    "[2025-10-16T07:40:47.646288Z] [INFO] Running test: test_csrf_protection",
+    "[2025-10-16T07:40:47.811681Z] [INFO] Test test_csrf_protection PASSED in 0.17s",
+    "[2025-10-16T07:40:47.816063Z] [INFO] Running test: test_error_handling_security",
+    "[2025-10-16T07:40:47.907069Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:40:47.936013Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:40:47.953869Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:40:47.970137Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:40:47.986176Z] [INFO] Console error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+    "[2025-10-16T07:40:47.989663Z] [INFO] Test test_error_handling_security PASSED in 0.17s",
+    "[2025-10-16T07:40:47.994526Z] [INFO] Running test: test_file_upload_security",
+    "[2025-10-16T07:40:48.181601Z] [INFO] Test test_file_upload_security PASSED in 0.19s",
+    "[2025-10-16T07:40:48.185695Z] [INFO] Running test: test_https_redirect",
+    "[2025-10-16T07:40:48.309961Z] [INFO] Test test_https_redirect PASSED in 0.12s",
+    "[2025-10-16T07:40:48.326111Z] [INFO] Running test: test_input_validation",
+    "[2025-10-16T07:40:48.513219Z] [INFO] Test test_input_validation PASSED in 0.19s",
+    "[2025-10-16T07:40:48.518344Z] [INFO] Running test: test_secure_cookies",
+    "[2025-10-16T07:40:48.672608Z] [INFO] Test test_secure_cookies PASSED in 0.15s",
+    "[2025-10-16T07:40:48.676988Z] [INFO] Running test: test_session_security",
+    "[2025-10-16T07:40:48.871103Z] [INFO] Test test_session_security PASSED in 0.19s",
+    "[2025-10-16T07:40:48.874895Z] [INFO] Running test: test_sql_injection_protection",
+    "[2025-10-16T07:40:49.039884Z] [INFO] Test test_sql_injection_protection PASSED in 0.16s",
+    "[2025-10-16T07:40:49.044603Z] [INFO] Running test: test_xss_protection",
+    "[2025-10-16T07:40:49.234706Z] [INFO] Test test_xss_protection PASSED in 0.19s",
+    "[2025-10-16T07:40:49.239165Z] [INFO] Running tests from: test_simple.py",
+    "[2025-10-16T07:40:49.243157Z] [INFO] Found 2 test functions in test_simple.py",
+    "[2025-10-16T07:40:49.243308Z] [INFO] Running test: test_browser_functionality",
+    "[2025-10-16T07:40:49.362778Z] [INFO] Test test_browser_functionality PASSED in 0.12s",
+    "[2025-10-16T07:40:49.366838Z] [INFO] Running test: test_simple_page_load",
+    "[2025-10-16T07:40:49.523472Z] [INFO] Test test_simple_page_load PASSED in 0.16s"
+  ]
+}

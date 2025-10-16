@@ -1,0 +1,24 @@
+lets work on restructuring the existing project, 
+lets start with rules.json
+
+here, the json should be dynamically generated. i.e, from a form,
+we want to make a defualt rules.json template. 
+we give a form, which would be like:
+- file ( example: selected index.html)
+- attributes
+- functions
+- synatx
+- other functions
+
+- file( example: app.py)
+- attributes
+- functions
+- synatx
+- imports
+- other features
+
+
+this should generate the json file
+
+
+-----

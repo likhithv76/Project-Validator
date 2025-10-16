@@ -90,7 +90,13 @@ class FlexibleFlaskValidator:
         if rules_file:
             self.rules_file = Path(rules_file)
         else:
-            self.rules_file = Path(__file__).parent / "defaultRules.json"
+            # Try to find rules in the new location first
+            new_rules_path = Path(__file__).parent.parent / "streamlit_app" / "rules" / "defaultRules.json"
+            if new_rules_path.exists():
+                self.rules_file = new_rules_path
+            else:
+                # Fallback to old location
+                self.rules_file = Path(__file__).parent / "defaultRules.json"
         self.json_rules = []
 
         # runtime process bookkeeping
@@ -108,6 +114,7 @@ class FlexibleFlaskValidator:
             "endpoints": [],
             "db_inspection": {},
             "crud_results": [],
+            "ui_tests": [],    # Playwright UI test results
             "summary": {}
         }
 
@@ -934,6 +941,125 @@ class FlexibleFlaskValidator:
                 })
         return results
 
+    # -------------------- UI Testing with Playwright --------------------
+    def run_ui_tests(self, host=None, port=None):
+        """
+        Run Playwright UI tests on the Flask application.
+        Returns list of test results.
+        """
+        if not requests:
+            self.log("requests not installed; skipping UI tests.", level="WARN")
+            return []
+        
+        host = host or self.DEFAULT_HOST
+        port = port or self.DEFAULT_PORT
+        base_url = f"http://{host}:{port}"
+        
+        self.log("Starting Playwright UI tests...")
+        
+        try:
+            # Check if Playwright backend is running
+            playwright_url = "http://127.0.0.1:8001"
+            health_response = requests.get(f"{playwright_url}/health", timeout=5)
+            
+            if health_response.status_code != 200:
+                self.log("Playwright backend not running; starting it...", level="INFO")
+                self._start_playwright_backend()
+                
+                # Wait for backend to start
+                import time
+                for i in range(10):  # Wait up to 10 seconds
+                    try:
+                        health_response = requests.get(f"{playwright_url}/health", timeout=2)
+                        if health_response.status_code == 200:
+                            break
+                    except:
+                        pass
+                    time.sleep(1)
+                else:
+                    self.log("Failed to start Playwright backend", level="ERROR")
+                    return []
+            
+            # Run UI tests
+            test_request = {
+                "base_url": base_url,
+                "test_suite": "default",
+                "project_name": self.project_name,
+                "timeout": 30,
+                "headless": True,
+                "capture_screenshots": True
+            }
+            
+            response = requests.post(
+                f"{playwright_url}/run-ui-tests",
+                json=test_request,
+                timeout=60  # Allow up to 60 seconds for tests
+            )
+            
+            if response.status_code == 200:
+                test_data = response.json()
+                results = test_data.get("results", [])
+                
+                # Log test results
+                total_tests = test_data.get("total_tests", 0)
+                passed_tests = test_data.get("passed_tests", 0)
+                failed_tests = test_data.get("failed_tests", 0)
+                
+                self.log(f"UI Tests completed: {passed_tests}/{total_tests} passed")
+                
+                # Add individual test results as validation checks
+                for result in results:
+                    test_name = result.get("name", "Unknown Test")
+                    status = result.get("status", "UNKNOWN")
+                    duration = result.get("duration", 0.0)
+                    error = result.get("error", "")
+                    
+                    passed = status == "PASS"
+                    points = 5 if passed else 0
+                    message = f"Duration: {duration:.2f}s" + (f" - {error}" if error else "")
+                    
+                    self.add_check(f"UI Test: {test_name}", passed, points, message)
+                
+                return results
+            else:
+                self.log(f"UI test request failed: {response.status_code}", level="ERROR")
+                return []
+                
+        except Exception as e:
+            self.log(f"Error running UI tests: {e}", level="ERROR")
+            return []
+    
+    def _start_playwright_backend(self):
+        """Start the Playwright backend server in a subprocess."""
+        try:
+            import subprocess
+            import sys
+            from pathlib import Path
+            
+            # Get the path to the playwright backend
+            backend_dir = Path(__file__).parent.parent / "playwright_backend"
+            startup_script = backend_dir / "start_server.py"
+            
+            if not startup_script.exists():
+                self.log(f"Playwright backend startup script not found at {startup_script}", level="ERROR")
+                return False
+            
+            # Start the backend server using the startup script
+            cmd = [sys.executable, str(startup_script)]
+            subprocess.Popen(
+                cmd,
+                cwd=str(backend_dir),
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+            
+            self.log("Playwright backend started")
+            return True
+            
+        except Exception as e:
+            self.log(f"Failed to start Playwright backend: {e}", level="ERROR")
+            return False
+
     # -------------------- Syntax checks --------------------
     def validate_syntax(self):
         """Offline syntax and code completeness check with flake8 (optional)."""
@@ -1038,6 +1164,10 @@ class FlexibleFlaskValidator:
         # CRUD tests
         crud_results = self.perform_crud_tests(endpoints, host=host, port=port)
         self.run_log["crud_results"] = crud_results
+
+        # UI Tests with Playwright
+        ui_test_results = self.run_ui_tests(host=host, port=port)
+        self.run_log["ui_tests"] = ui_test_results
 
         # finalize (stop app, write logs)
         self._finalize_run()
@@ -1237,7 +1367,8 @@ def run_flexible_validation(project_path: str, host: str = None, port: int = Non
         "json_file": str(validator.json_file),
         "errors": validator.errors,
         "warnings": validator.warnings,
-        "validation_results": validator.validation_results
+        "validation_results": validator.validation_results,
+        "ui_tests": validator.run_log.get("ui_tests", [])
     }
 
 
