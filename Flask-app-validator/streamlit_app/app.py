@@ -19,10 +19,10 @@ from flexible_validator import run_flexible_validation
 st.set_page_config(page_title="Flask Project Validator", page_icon="🧠", layout="wide")
 
 # Sidebar navigation
-st.sidebar.title("🧠 Flask Validator")
+st.sidebar.title("Flask Validator")
 page = st.sidebar.selectbox(
     "Choose Page",
-    ["📊 Main Validator", "🔧 Rule Builder", "📋 Rule Manager"]
+    ["Main Validator", "Rule Builder", "Rule Manager"]
 )
 
 if page == "🔧 Rule Builder":
@@ -31,8 +31,8 @@ if page == "🔧 Rule Builder":
     main()
     st.stop()
 
-elif page == "📋 Rule Manager":
-    st.title("📋 Rule Manager")
+elif page == "Rule Manager":
+    st.title("Rule Manager")
     st.markdown("Manage and view existing validation rules")
     
     # List existing rule files
@@ -44,7 +44,7 @@ elif page == "📋 Rule Manager":
             st.subheader("Available Rule Files")
             
             for rule_file in rule_files:
-                with st.expander(f"📄 {rule_file.name}"):
+                with st.expander(f"{rule_file.name}"):
                     try:
                         with open(rule_file, 'r', encoding='utf-8') as f:
                             rules_data = json.load(f)
@@ -77,7 +77,7 @@ elif page == "📋 Rule Manager":
     st.stop()
 
 # Main validator page
-st.title("📊 Automated Flask Project Validator")
+st.title("Automated Flask Project Validator")
 st.markdown(
     """
     Validate Flask-based student submissions with runtime checks, CRUD tests, DB schema analysis,  
@@ -88,11 +88,11 @@ st.markdown(
 col_left, col_right = st.columns([1, 1.8])
 
 with col_left:
-    st.header("📂 Upload Project")
+    st.header("Upload Project")
     uploaded_file = st.file_uploader("Upload Flask project (.zip)", type=["zip"])
     
     # Rule selection
-    st.subheader("🔧 Validation Rules")
+    st.subheader("Validation Rules")
     rules_dir = Path("rules")
     
     if rules_dir.exists():
@@ -219,7 +219,7 @@ if run_validation and uploaded_file:
         # Display UI test results if available
         ui_tests = result.get("ui_tests", [])
         if ui_tests:
-            st.subheader("🎭 UI Test Results")
+            st.subheader("UI Test Results")
             
             # Calculate UI test statistics
             total_ui_tests = len(ui_tests)

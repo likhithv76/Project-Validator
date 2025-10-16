@@ -1,8 +1,3 @@
-"""
-Playwright test runner for headless UI testing.
-Handles test execution, screenshot capture, and result collection.
-"""
-
 import asyncio
 import json
 import os
@@ -14,12 +9,7 @@ from typing import Dict, List, Optional
 
 from playwright.async_api import async_playwright, Browser, BrowserContext, Page
 
-class PlaywrightTestRunner:
-    """
-    Handles Playwright test execution in headless mode.
-    Manages browser lifecycle, test discovery, and result collection.
-    """
-    
+class PlaywrightTestRunner:   
     def __init__(self):
         self.playwright = None
         self.browser = None
@@ -29,7 +19,6 @@ class PlaywrightTestRunner:
         self.tests_dir = Path(__file__).parent / "tests"
         
     async def initialize(self):
-        """Initialize Playwright and browser."""
         try:
             self.playwright = await async_playwright().start()
             self.log(f"Playwright initialized successfully")
@@ -64,14 +53,11 @@ class PlaywrightTestRunner:
         results = []
         
         try:
-            # Create results directory for this project
             project_results_dir = self.results_dir / project_name
             project_results_dir.mkdir(parents=True, exist_ok=True)
             
-            # Launch browser
             await self._launch_browser(headless=headless)
             
-            # Discover and run tests
             test_files = self._discover_tests(test_suite)
             self.log(f"Found {len(test_files)} test files for suite: {test_suite}")
             
@@ -82,7 +68,6 @@ class PlaywrightTestRunner:
                 )
                 results.extend(file_results)
             
-            # Save results
             await self._save_results(project_results_dir, results, start_time)
             
         except Exception as e:
@@ -100,7 +85,6 @@ class PlaywrightTestRunner:
         return results
     
     async def _launch_browser(self, headless: bool = True):
-        """Launch Chromium browser with appropriate settings."""
         try:
             if not self.playwright:
                 raise Exception("Playwright not initialized")
@@ -123,7 +107,6 @@ class PlaywrightTestRunner:
             if not self.browser:
                 raise Exception("Failed to create browser instance")
             
-            # Create context with security settings
             self.context = await self.browser.new_context(
                 viewport={"width": 1280, "height": 720},
                 user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
@@ -136,21 +119,17 @@ class PlaywrightTestRunner:
             
         except Exception as e:
             self.log(f"Failed to launch browser: {e}", level="ERROR")
-            # Clean up on failure
             await self._cleanup()
             raise
     
     def _discover_tests(self, test_suite: str) -> List[Path]:
-        """Discover test files based on test suite."""
         if not self.tests_dir.exists():
             self.log("Tests directory not found", level="WARN")
             return []
         
         if test_suite == "default":
-            # Run all test files
             test_files = list(self.tests_dir.glob("test_*.py"))
         else:
-            # Run specific test suite
             test_files = list(self.tests_dir.glob(f"test_{test_suite}*.py"))
         
         return test_files
@@ -163,17 +142,14 @@ class PlaywrightTestRunner:
         capture_screenshots: bool,
         results_dir: Path
     ) -> List[Dict]:
-        """Run all tests in a single test file."""
         results = []
         
         try:
-            # Import the test module
             import importlib.util
             spec = importlib.util.spec_from_file_location("test_module", test_file)
             test_module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(test_module)
             
-            # Find test functions
             test_functions = [
                 getattr(test_module, name) for name in dir(test_module)
                 if name.startswith("test_") and callable(getattr(test_module, name))
@@ -181,7 +157,6 @@ class PlaywrightTestRunner:
             
             self.log(f"Found {len(test_functions)} test functions in {test_file.name}")
             
-            # Run each test function
             for test_func in test_functions:
                 result = await self._run_single_test(
                     test_func, base_url, timeout, capture_screenshots, results_dir
@@ -215,18 +190,14 @@ class PlaywrightTestRunner:
         try:
             self.log(f"Running test: {test_name}")
             
-            # Check if context is still valid
             if not self.context:
                 raise Exception("Browser context has been closed")
             
-            # Create a new page for this test
             page = await self.context.new_page()
             
-            # Set up error handling
             page.on("console", lambda msg: self.log(f"Console {msg.type}: {msg.text}"))
             page.on("pageerror", lambda error: self.log(f"Page error: {error}", level="ERROR"))
             
-            # Run the test with timeout
             await asyncio.wait_for(
                 test_func(page, base_url),
                 timeout=timeout
@@ -306,13 +277,11 @@ class PlaywrightTestRunner:
     async def _capture_screenshot(
         self, page: Page, test_name: str, results_dir: Path
     ) -> Optional[str]:
-        """Capture screenshot on test failure."""
         try:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             screenshot_name = f"{test_name}_{timestamp}.png"
             screenshot_path = results_dir / "screenshots" / screenshot_name
             
-            # Ensure screenshots directory exists
             screenshot_path.parent.mkdir(parents=True, exist_ok=True)
             
             await page.screenshot(path=str(screenshot_path), full_page=True)
@@ -325,7 +294,6 @@ class PlaywrightTestRunner:
             return None
     
     async def _save_results(self, results_dir: Path, results: List[Dict], start_time: float):
-        """Save test results to JSON file."""
         try:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             results_file = results_dir / f"test_results_{timestamp}.json"
@@ -349,7 +317,6 @@ class PlaywrightTestRunner:
             self.log(f"Failed to save results: {e}", level="ERROR")
     
     async def _cleanup(self):
-        """Clean up browser resources."""
         try:
             if self.context:
                 try:
@@ -377,18 +344,15 @@ class PlaywrightTestRunner:
         except Exception as e:
             self.log(f"Error during cleanup: {e}", level="WARN")
         finally:
-            # Ensure cleanup even if errors occur
             self.context = None
             self.browser = None
             self.playwright = None
     
     def log(self, message: str, level: str = "INFO"):
-        """Add log entry."""
         timestamp = datetime.utcnow().isoformat() + "Z"
         log_entry = f"[{timestamp}] [{level}] {message}"
         self.logs.append(log_entry)
-        print(log_entry)  # Also print to console
+        print(log_entry)
     
     def get_logs(self) -> List[str]:
-        """Get all log entries."""
         return self.logs.copy()

@@ -1,15 +1,9 @@
-"""
-Startup script for Playwright backend server.
-This script ensures all dependencies are available and starts the server.
-"""
-
 import sys
 import subprocess
 import os
 from pathlib import Path
 
 def check_dependencies():
-    """Check if required dependencies are installed."""
     required_packages = [
         "fastapi",
         "uvicorn", 
@@ -39,7 +33,6 @@ def check_dependencies():
     return True
 
 def install_playwright_browsers():
-    """Install Playwright browsers if not already installed."""
     try:
         subprocess.check_call([sys.executable, "-m", "playwright", "install", "chromium"])
         print("Playwright browsers installed")
@@ -49,20 +42,16 @@ def install_playwright_browsers():
         return False
 
 def main():
-    """Main startup function."""
     print("Starting Playwright Backend Server...")
     
-    # Check dependencies
     if not check_dependencies():
         print("Failed to install dependencies")
         sys.exit(1)
     
-    # Install Playwright browsers
     if not install_playwright_browsers():
         print("Failed to install Playwright browsers")
         sys.exit(1)
     
-    # Start the server
     try:
         from server import app
         import uvicorn

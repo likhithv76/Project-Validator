@@ -1,8 +1,3 @@
-"""
-FastAPI server for Playwright UI testing backend.
-Provides endpoints to run headless UI tests on Flask applications.
-"""
-
 import asyncio
 import json
 import os
@@ -24,7 +19,6 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Global test runner instance
 test_runner = None
 
 class TestRequest(BaseModel):
@@ -37,13 +31,13 @@ class TestRequest(BaseModel):
 
 class TestResult(BaseModel):
     name: str
-    status: str  # PASS, FAIL, SKIP
+    status: str
     duration: float
     error: Optional[str] = None
     screenshot: Optional[str] = None
 
 class TestResponse(BaseModel):
-    status: str  # completed, failed, timeout
+    status: str
     results: List[TestResult]
     screenshots: List[str]
     logs: List[str]
@@ -54,7 +48,6 @@ class TestResponse(BaseModel):
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint."""
     return {
         "status": "healthy",
         "timestamp": datetime.utcnow().isoformat() + "Z",
@@ -63,26 +56,14 @@ async def health_check():
 
 @app.post("/run-ui-tests", response_model=TestResponse)
 async def run_ui_tests(request: TestRequest):
-    """
-    Run Playwright UI tests on the specified Flask application.
-    
-    Args:
-        request: Test configuration including base URL and test suite
-        
-    Returns:
-        TestResponse with detailed results
-    """
     global test_runner
     
     start_time = time.time()
-    
     try:
-        # Initialize test runner if not already done
         if test_runner is None:
             test_runner = PlaywrightTestRunner()
             await test_runner.initialize()
         
-        # Run the tests
         results = await test_runner.run_tests(
             base_url=request.base_url,
             test_suite=request.test_suite,
@@ -94,12 +75,10 @@ async def run_ui_tests(request: TestRequest):
         
         execution_time = time.time() - start_time
         
-        # Calculate statistics
         total_tests = len(results)
         passed_tests = sum(1 for r in results if r["status"] == "PASS")
         failed_tests = sum(1 for r in results if r["status"] == "FAIL")
         
-        # Extract screenshots and logs
         screenshots = [r.get("screenshot", "") for r in results if r.get("screenshot")]
         logs = test_runner.get_logs()
         
@@ -129,7 +108,6 @@ async def run_ui_tests(request: TestRequest):
 
 @app.get("/test-suites")
 async def list_test_suites():
-    """List available test suites."""
     tests_dir = Path(__file__).parent / "tests"
     if not tests_dir.exists():
         return {"test_suites": []}
@@ -146,7 +124,6 @@ async def get_test_results(project_name: str):
     if not results_dir.exists():
         raise HTTPException(status_code=404, detail="No results found for this project")
     
-    # Find the most recent result
     result_files = list(results_dir.glob("*.json"))
     if not result_files:
         raise HTTPException(status_code=404, detail="No result files found")
@@ -161,7 +138,6 @@ async def get_test_results(project_name: str):
 
 @app.delete("/results/{project_name}")
 async def clear_test_results(project_name: str):
-    """Clear test results for a specific project."""
     results_dir = Path(__file__).parent / "results" / project_name
     if results_dir.exists():
         import shutil
