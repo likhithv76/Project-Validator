@@ -655,7 +655,9 @@ class FlexibleFlaskValidator:
             self.log("No main app file to run.", level="ERROR")
             return False
 
-        cmd = [sys.executable, str(self.main_app_file)]
+        # Use just the filename since we're running from the project directory
+        main_app_filename = self.main_app_file.name if hasattr(self.main_app_file, 'name') else str(self.main_app_file)
+        cmd = [sys.executable, main_app_filename]
         self.log(f"Starting student's app subprocess: {' '.join(cmd)} (cwd={self.project_path})")
         try:
             self.proc = subprocess.Popen(
@@ -944,87 +946,100 @@ class FlexibleFlaskValidator:
     # -------------------- UI Testing with Playwright --------------------
     def run_ui_tests(self, host=None, port=None):
         """
-        Run Playwright UI tests on the Flask application.
+        Run Playwright UI tests on the Flask application using rule-based validation.
         Returns list of test results.
         """
-        if not requests:
-            self.log("requests not installed; skipping UI tests.", level="WARN")
-            return []
-        
-        host = host or self.DEFAULT_HOST
-        port = port or self.DEFAULT_PORT
-        base_url = f"http://{host}:{port}"
-        
-        self.log("Starting Playwright UI tests...")
-        
         try:
-            # Check if Playwright backend is running
-            playwright_url = "http://127.0.0.1:8001"
-            health_response = requests.get(f"{playwright_url}/health", timeout=5)
+            # Import the new PlaywrightUIRunner
+            try:
+                from .playwright_runner import PlaywrightUIRunner
+            except ImportError:
+                try:
+                    # Try absolute import if relative import fails
+                    from validator.playwright_runner import PlaywrightUIRunner
+                except ImportError:
+                    # Fallback for when running as standalone
+                    import sys
+                    from pathlib import Path
+                    sys.path.append(str(Path(__file__).parent))
+                    from playwright_runner import PlaywrightUIRunner
+            import asyncio
             
-            if health_response.status_code != 200:
-                self.log("Playwright backend not running; starting it...", level="INFO")
-                self._start_playwright_backend()
+            host = host or self.DEFAULT_HOST
+            port = port or self.DEFAULT_PORT
+            base_url = f"http://{host}:{port}"
+            
+            self.log("Starting rule-based Playwright UI tests...")
+            
+            # Check if rules file contains UI tests
+            rules_file = self.rules_file or "streamlit_app/rules/defaultRules.json"
+            if not os.path.exists(rules_file):
+                self.log(f"Rules file not found: {rules_file}", level="WARN")
+                return []
+            
+            # Load rules to check for UI tests
+            with open(rules_file, 'r', encoding='utf-8') as f:
+                rules_data = json.load(f)
+            
+            ui_tests = rules_data.get("ui_tests", [])
+            if not ui_tests:
+                self.log("No UI tests found in rules file", level="INFO")
+                return []
+            
+            self.log(f"Found {len(ui_tests)} UI test routes in rules file")
+            
+            # Run UI validation using the new runner
+            runner = PlaywrightUIRunner(base_url)
+            
+            # Handle Windows event loop policy
+            import platform
+            if platform.system() == "Windows":
+                try:
+                    # Set Windows-specific event loop policy
+                    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+                except Exception as e:
+                    self.log(f"Could not set Windows event loop policy: {e}", level="WARN")
+            
+            results = asyncio.run(runner.run_ui_validation(rules_file))
+            
+            if results:
+                # Get summary
+                summary = runner.get_summary()
+                total_tests = summary["total_tests"]
+                passed_tests = summary["passed_tests"]
+                failed_tests = summary["failed_tests"]
+                earned_points = summary["earned_points"]
+                total_points = summary["total_points"]
                 
-                # Wait for backend to start
-                import time
-                for i in range(10):  # Wait up to 10 seconds
-                    try:
-                        health_response = requests.get(f"{playwright_url}/health", timeout=2)
-                        if health_response.status_code == 200:
-                            break
-                    except:
-                        pass
-                    time.sleep(1)
-                else:
-                    self.log("Failed to start Playwright backend", level="ERROR")
-                    return []
-            
-            # Run UI tests
-            test_request = {
-                "base_url": base_url,
-                "test_suite": "default",
-                "project_name": self.project_name,
-                "timeout": 30,
-                "headless": True,
-                "capture_screenshots": True
-            }
-            
-            response = requests.post(
-                f"{playwright_url}/run-ui-tests",
-                json=test_request,
-                timeout=60  # Allow up to 60 seconds for tests
-            )
-            
-            if response.status_code == 200:
-                test_data = response.json()
-                results = test_data.get("results", [])
-                
-                # Log test results
-                total_tests = test_data.get("total_tests", 0)
-                passed_tests = test_data.get("passed_tests", 0)
-                failed_tests = test_data.get("failed_tests", 0)
-                
-                self.log(f"UI Tests completed: {passed_tests}/{total_tests} passed")
+                self.log(f"UI Tests completed: {passed_tests}/{total_tests} passed ({earned_points}/{total_points} points)")
                 
                 # Add individual test results as validation checks
                 for result in results:
-                    test_name = result.get("name", "Unknown Test")
+                    test_name = result.get("test", "Unknown Test")
+                    route = result.get("route", "")
                     status = result.get("status", "UNKNOWN")
                     duration = result.get("duration", 0.0)
                     error = result.get("error", "")
+                    points = result.get("points", 0)
                     
                     passed = status == "PASS"
-                    points = 5 if passed else 0
-                    message = f"Duration: {duration:.2f}s" + (f" - {error}" if error else "")
+                    message = f"Route: {route} | Duration: {duration:.2f}s"
+                    if error:
+                        message += f" | Error: {error}"
                     
                     self.add_check(f"UI Test: {test_name}", passed, points, message)
                 
                 return results
             else:
-                self.log(f"UI test request failed: {response.status_code}", level="ERROR")
+                self.log("No UI test results returned", level="WARN")
                 return []
                 
+        except ImportError as e:
+            self.log(f"Playwright not available: {e}", level="WARN")
+            return []
+        except NotImplementedError as e:
+            self.log(f"Playwright not supported on this platform: {e}", level="WARN")
+            return []
         except Exception as e:
             self.log(f"Error running UI tests: {e}", level="ERROR")
             return []
@@ -1046,12 +1061,25 @@ class FlexibleFlaskValidator:
             
             # Start the backend server using the startup script
             cmd = [sys.executable, str(startup_script)]
-            subprocess.Popen(
-                cmd,
-                cwd=str(backend_dir),
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
-            )
+            
+            # Use Windows-specific subprocess creation
+            import platform
+            if platform.system() == "Windows":
+                # Use CREATE_NEW_PROCESS_GROUP on Windows to avoid subprocess issues
+                subprocess.Popen(
+                    cmd,
+                    cwd=str(backend_dir),
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
+                )
+            else:
+                subprocess.Popen(
+                    cmd,
+                    cwd=str(backend_dir),
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL
+                )
             
             self.log("Playwright backend started")
             return True

@@ -234,18 +234,33 @@ if run_validation and uploaded_file:
             with col3:
                 st.metric("Failed", failed_ui_tests)
             
-            # Show UI test details
+            # Show UI test details with screenshots
             with st.expander("View UI Test Details"):
                 for i, test in enumerate(ui_tests):
                     status = test.get("status", "UNKNOWN")
                     name = test.get("name", f"Test {i+1}")
+                    route = test.get("route", "")
                     duration = test.get("duration", 0.0)
                     error = test.get("error", "")
+                    screenshot = test.get("screenshot", "")
+                    points = test.get("points", 0)
                     
                     status_color = "🟢" if status == "PASS" else "🔴"
-                    st.write(f"{status_color} **{name}** ({duration:.2f}s)")
+                    st.write(f"{status_color} **{name}** - Route: {route} - Duration: {duration:.2f}s - Points: {points}")
+                    
                     if error:
-                        st.write(f"   Error: {error}")
+                        st.error(f"Error: {error}")
+                    
+                    # Display screenshot if available
+                    if screenshot and os.path.exists(screenshot):
+                        try:
+                            st.image(screenshot, caption=f"Screenshot: {name}", use_column_width=True)
+                        except Exception as e:
+                            st.warning(f"Could not display screenshot: {e}")
+                    elif screenshot:
+                        st.warning(f"Screenshot not found: {screenshot}")
+                    
+                    st.divider()
 
         result_placeholder.markdown(
             f"""

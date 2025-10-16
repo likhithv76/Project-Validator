@@ -1,0 +1,107 @@
+"""
+Test script for UI validation with default rules.
+"""
+
+import os
+import sys
+import time
+import subprocess
+from pathlib import Path
+
+# Add the validator directory to the path
+sys.path.insert(0, str(Path(__file__).parent / "validator"))
+
+from flexible_validator import FlexibleFlaskValidator
+
+def test_default_ui_validation():
+    """Test the UI validation with default rules."""
+    print("Testing UI Validation with Default Rules")
+    print("=" * 50)
+    
+    # Create test project directory
+    test_project_dir = Path("test_flask_project")
+    if not test_project_dir.exists():
+        print("Test project directory not found. Please create it first.")
+        return False
+    
+    print(f"Testing project: {test_project_dir}")
+    
+    try:
+        # Initialize validator with default rules
+        validator = FlexibleFlaskValidator(
+            project_path=str(test_project_dir),
+            rules_file="streamlit_app/rules/defaultRules.json"
+        )
+        
+        print("Starting Flask app...")
+        
+        # Start the Flask app in a subprocess
+        flask_process = subprocess.Popen(
+            [sys.executable, "app.py"],
+            cwd=test_project_dir,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        
+        # Wait for app to start
+        print("Waiting for Flask app to start...")
+        time.sleep(5)  # Give more time for the app to start
+        
+        try:
+            # Run validation
+            print("Running validation with UI tests...")
+            success = validator.run_validation()
+            
+            print("\nValidation Results:")
+            print("-" * 40)
+            print(f"Checks passed: {validator.checks_passed}/{validator.total_checks}")
+            print(f"Errors: {len(validator.errors)}")
+            print(f"Warnings: {len(validator.warnings)}")
+            
+            # Display UI test results
+            ui_tests = validator.run_log.get('ui_tests', [])
+            if ui_tests:
+                print(f"\nUI Test Results ({len(ui_tests)} tests):")
+                print("-" * 40)
+                
+                for test in ui_tests:
+                    status = test.get('status', 'UNKNOWN')
+                    test_name = test.get('test', 'Unknown')
+                    route = test.get('route', '')
+                    duration = test.get('duration', 0.0)
+                    error = test.get('error', '')
+                    points = test.get('points', 0)
+                    screenshot = test.get('screenshot', '')
+                    
+                    status_symbol = "[PASS]" if status == "PASS" else "[FAIL]"
+                    print(f"{status_symbol} {test_name} ({route}) - {duration:.2f}s - {points} points")
+                    if error:
+                        print(f"    Error: {error}")
+                    if screenshot:
+                        print(f"    Screenshot: {screenshot}")
+            else:
+                print("\nNo UI test results found.")
+            
+            return success
+            
+        finally:
+            # Stop Flask app
+            print("\nStopping Flask app...")
+            flask_process.terminate()
+            try:
+                flask_process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                flask_process.kill()
+            
+    except Exception as e:
+        print(f"Error during validation: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+if __name__ == "__main__":
+    success = test_default_ui_validation()
+    if success:
+        print("\n[PASS] UI validation test completed successfully")
+    else:
+        print("\n[FAIL] UI validation test failed")
