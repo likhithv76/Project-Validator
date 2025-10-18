@@ -1,0 +1,241 @@
+{
+  "project": "Flask Auth System",
+  "description": "Progressive task-based validation for Flask authentication application",
+  "tasks": [
+    {
+      "id": 1,
+      "name": "Login Page Creation",
+      "description": "Build login.html with proper form and input validation",
+      "required_files": ["templates/login.html"],
+      "validation_rules": {
+        "type": "html",
+        "file": "templates/login.html",
+        "mustHaveElements": ["form", "input", "button"],
+        "mustHaveClasses": ["login_username", "login_password", "login_submit"],
+        "mustHaveInputs": ["username", "password"],
+        "mustHaveContent": ["Login", "Register here"],
+        "points": 10
+      },
+      "playwright_test": {
+        "route": "/login",
+        "actions": [
+          {
+            "selector_type": "class",
+            "selector_value": "login_username",
+            "input": "test_user"
+          },
+          {
+            "selector_type": "class", 
+            "selector_value": "login_password",
+            "input": "P@ssw0rd!"
+          },
+          {
+            "selector_type": "class",
+            "selector_value": "login_submit",
+            "click": true
+          }
+        ],
+        "validate": [
+          {
+            "type": "text_present",
+            "value": "Login successful"
+          },
+          {
+            "type": "url_redirect", 
+            "value": "/dashboard"
+          }
+        ],
+        "points": 15
+      },
+      "unlock_condition": {
+        "min_score": 10,
+        "required_tasks": []
+      }
+    },
+    {
+      "id": 2,
+      "name": "Registration Page Creation", 
+      "description": "Build register.html with form validation and password confirmation",
+      "required_files": ["templates/register.html"],
+      "validation_rules": {
+        "type": "html",
+        "file": "templates/register.html", 
+        "mustHaveElements": ["form", "input", "button"],
+        "mustHaveClasses": ["register_form_username", "register_form_email", "register_form_password", "register_form_confirm_password", "register_form_submit_button"],
+        "mustHaveInputs": ["username", "email", "password", "confirm_password"],
+        "mustHaveContent": ["Create Account", "Login here"],
+        "points": 10
+      },
+      "playwright_test": {
+        "route": "/register",
+        "actions": [
+          {
+            "selector_type": "class",
+            "selector_value": "register_form_username",
+            "input": "test_user_123"
+          },
+          {
+            "selector_type": "class",
+            "selector_value": "register_form_email", 
+            "input": "test@example.com"
+          },
+          {
+            "selector_type": "class",
+            "selector_value": "register_form_password",
+            "input": "StrongPass123!"
+          },
+          {
+            "selector_type": "class",
+            "selector_value": "register_form_confirm_password",
+            "input": "StrongPass123!"
+          },
+          {
+            "selector_type": "class",
+            "selector_value": "register_form_submit_button",
+            "click": true
+          }
+        ],
+        "validate": [
+          {
+            "type": "text_present",
+            "value": "Registration successful"
+          },
+          {
+            "type": "url_redirect",
+            "value": "/login"
+          }
+        ],
+        "points": 15
+      },
+      "unlock_condition": {
+        "min_score": 10,
+        "required_tasks": [1]
+      }
+    },
+    {
+      "id": 3,
+      "name": "Dashboard Page Creation",
+      "description": "Build dashboard.html with user session display and logout functionality",
+      "required_files": ["templates/dashboard.html"],
+      "validation_rules": {
+        "type": "html", 
+        "file": "templates/dashboard.html",
+        "mustHaveElements": ["div", "h2", "button"],
+        "mustHaveClasses": ["dashboard-container", "logout_button", "user_profile"],
+        "mustHaveContent": ["Dashboard", "Welcome back", "Logout"],
+        "points": 10
+      },
+      "playwright_test": {
+        "route": "/dashboard",
+        "actions": [
+          {
+            "selector_type": "class",
+            "selector_value": "logout_button",
+            "click": true
+          }
+        ],
+        "validate": [
+          {
+            "type": "url_redirect",
+            "value": "/login"
+          },
+          {
+            "type": "text_present",
+            "value": "Logged out successfully"
+          }
+        ],
+        "points": 15
+      },
+      "unlock_condition": {
+        "min_score": 10,
+        "required_tasks": [1, 2]
+      }
+    },
+    {
+      "id": 4,
+      "name": "Backend Authentication Logic",
+      "description": "Implement Flask routes and authentication logic in app.py",
+      "required_files": ["app.py"],
+      "validation_rules": {
+        "type": "runtime",
+        "file": "app.py",
+        "mustHaveRoutes": ["/", "/register", "/login", "/logout", "/dashboard"],
+        "points": 20
+      },
+      "playwright_test": {
+        "route": "/",
+        "actions": [
+          {
+            "selector_type": "text",
+            "selector_value": "Welcome to Flask Auth",
+            "check_type": "exists"
+          }
+        ],
+        "validate": [
+          {
+            "type": "text_present",
+            "value": "Welcome to Flask Auth"
+          }
+        ],
+        "points": 10
+      },
+      "unlock_condition": {
+        "min_score": 15,
+        "required_tasks": [1, 2, 3]
+      }
+    },
+    {
+      "id": 5,
+      "name": "Database Integration",
+      "description": "Set up SQLite database with user model and password hashing",
+      "required_files": ["app.py", "instance/users.db"],
+      "validation_rules": {
+        "type": "database",
+        "file": "instance/users.db",
+        "mustExist": true,
+        "points": 15
+      },
+      "playwright_test": {
+        "route": "/register",
+        "actions": [
+          {
+            "selector_type": "class",
+            "selector_value": "register_form_username",
+            "input": "db_test_user"
+          },
+          {
+            "selector_type": "class",
+            "selector_value": "register_form_email",
+            "input": "db_test@example.com"
+          },
+          {
+            "selector_type": "class",
+            "selector_value": "register_form_password",
+            "input": "DbTest123!"
+          },
+          {
+            "selector_type": "class",
+            "selector_value": "register_form_confirm_password",
+            "input": "DbTest123!"
+          },
+          {
+            "selector_type": "class",
+            "selector_value": "register_form_submit_button",
+            "click": true
+          }
+        ],
+        "validate": [
+          {
+            "type": "text_present",
+            "value": "Registration successful"
+          }
+        ],
+        "points": 20
+      },
+      "unlock_condition": {
+        "min_score": 15,
+        "required_tasks": [1, 2, 3, 4]
+      }
+    }
+  ]
+}

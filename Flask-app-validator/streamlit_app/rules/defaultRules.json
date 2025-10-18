@@ -226,6 +226,7 @@
     {
       "route": "/register",
       "page_title": "Register",
+      "fileds":"",
       "description": "Test user registration functionality",
       "test_cases": [
         {

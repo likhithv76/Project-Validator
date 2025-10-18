@@ -3,7 +3,7 @@
 {% block title %}Register - Flask Test App{% endblock %}
 
 {% block content %}
-<h2>User Registration</h2>
+<h2>Create Account</h2>
 
 <form method="POST" class="register_form">
     <div class="form-group">
@@ -26,7 +26,7 @@
         <input type="password" id="confirm_password" name="confirm_password" class="register_form_confirm_password" required>
     </div>
     
-    <button type="submit" class="btn register_form_submit_button">Register</button>
+    <button type="submit" class="btn register_form_submit_button">Create Account</button>
 </form>
 
 <p>Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
