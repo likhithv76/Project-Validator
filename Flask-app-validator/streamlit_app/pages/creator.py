@@ -39,11 +39,11 @@ if uploaded_zip:
                     rel_path = os.path.relpath(item_path, root_path)
 
                     if os.path.isdir(item_path):
-                        with st.expander(f"{indent}📁 {item}", expanded=False):
+                        with st.expander(f"{indent} {item}", expanded=False):
                             show_file_tree(item_path, level + 1)
                     else:
                         file_ext = os.path.splitext(item)[1].lower()
-                        icon = "🌐" if file_ext == '.html' else "📄" if file_ext == '.py' else "📝"
+                        icon = "HTML" if file_ext == '.html' else "Python" if file_ext == '.py' else "Text"
                         if st.button(f"{indent}{icon} {item}", key=f"file_{rel_path}"):
                             st.session_state.selected_file = item_path
                             st.session_state.selected_file_name = item
@@ -67,7 +67,7 @@ if uploaded_zip:
         st.markdown("---")
         st.subheader("Auto-generate Testcases")
 
-        if st.button("⚙️ Generate Testcases", use_container_width=True):
+        if st.button("Generate Testcases", use_container_width=True):
             st.info("Generating testcases... Please wait.")
             try:
                 node_script = Path("streamlit_app/pages/autoTestcaseGenerator.js").resolve()
@@ -77,7 +77,7 @@ if uploaded_zip:
                     text=True
                 )
                 if result.returncode == 0:
-                    st.success("✅ Testcases generated successfully!")
+                    st.success("Testcases generated successfully!")
                     st.text_area("Generator Output Log", result.stdout, height=150)
                     project_json_path = os.path.join(tmp_dir, "project_tasks.json")
                     if os.path.exists(project_json_path):
@@ -91,7 +91,7 @@ if uploaded_zip:
                     else:
                         st.warning("Testcase JSON file not found.")
                 else:
-                    st.error("❌ Testcase generation failed.")
+                    st.error("Testcase generation failed.")
                     st.code(result.stderr)
             except Exception as e:
                 st.error(f"Error running Node generator: {e}")
@@ -354,7 +354,7 @@ if uploaded_zip:
             st.markdown("### Add New Task")
             col_add, col_spacer = st.columns([0.3, 0.7])
             with col_add:
-                if st.button("➕ Add New Task", use_container_width=True):
+                if st.button("Add New Task", use_container_width=True):
                     new_task_id = max([t["id"] for t in project_data["tasks"]], default=0) + 1
                     new_task = {
                         "id": new_task_id,
@@ -387,7 +387,7 @@ if uploaded_zip:
             col_save, col_edit = st.columns(2)
             
             with col_save:
-                if st.button("💾 Save Project Package", use_container_width=True):
+                if st.button("Save Project Package", use_container_width=True):
                     # Create projects directory (shared with student.py)
                     projects_dir = Path("projects")
                     projects_dir.mkdir(exist_ok=True)
@@ -431,9 +431,9 @@ To use this package:
 3. Run Playwright tests using the configured routes and actions
 """)
                     
-                    st.success(f"✅ Project saved and available to students!")
-                    st.info(f"📁 Project '{project_data.get('project', 'Untitled')}' is now available in the Student Portal")
-                    st.success(f"📂 Files saved to: {projects_dir}")
+                    st.success(f"Project saved and available to students!")
+                    st.info(f"Project '{project_data.get('project', 'Untitled')}' is now available in the Student Portal")
+                    st.success(f"Files saved to: {projects_dir}")
                     st.caption(f"JSON config: {json_filename}")
                     st.caption(f"Package: {package_dir}")
                     
@@ -450,7 +450,7 @@ To use this package:
                         package_content = f.read()
                     
                     st.download_button(
-                        label="📦 Download Complete Package",
+                        label="Download Complete Package",
                         data=package_content,
                         file_name=f"{project_name}_package.zip",
                         mime="application/zip",
@@ -461,7 +461,7 @@ To use this package:
                     with open(json_path, "r", encoding="utf-8") as f:
                         json_content = f.read()
                     st.download_button(
-                        label="📄 Download JSON Only",
+                        label="Download JSON Only",
                         data=json_content,
                         file_name=json_filename,
                         mime="application/json",
@@ -469,7 +469,7 @@ To use this package:
                     )
             
             with col_edit:
-                if st.button("✏️ Edit Raw JSON", use_container_width=True):
+                if st.button("Edit Raw JSON", use_container_width=True):
                     st.session_state.edit_mode = not st.session_state.get('edit_mode', False)
             
             # Raw JSON editor
@@ -482,17 +482,17 @@ To use this package:
                     key="raw_json_editor"
                 )
                 
-                if st.button("🔄 Update from JSON"):
+                if st.button("Update from JSON"):
                     try:
                         updated_data = json.loads(json_text)
                         st.session_state.generated_json = updated_data
-                        st.success("✅ JSON updated successfully!")
+                        st.success("JSON updated successfully!")
                         st.rerun()
                     except json.JSONDecodeError as e:
-                        st.error(f"❌ Invalid JSON: {e}")
+                        st.error(f"Invalid JSON: {e}")
         
         else:
-            st.info("👆 Upload a project ZIP and generate testcases to configure tasks.")
+            st.info("Upload a project ZIP and generate testcases to configure tasks.")
             
             # Simple task creation form
             st.markdown("### Create Manual Task")

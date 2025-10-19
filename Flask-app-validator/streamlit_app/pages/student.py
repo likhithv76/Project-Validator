@@ -26,10 +26,10 @@ st.title("Student Task Validator")
 # Add refresh and clear cache buttons
 col_title, col_refresh, col_clear = st.columns([0.6, 0.2, 0.2])
 with col_refresh:
-    if st.button("🔄 Refresh", help="Refresh available projects"):
+    if st.button("Refresh", help="Refresh available projects"):
         st.rerun()
 with col_clear:
-    if st.button("🗑️ Clear Cache", help="Clear student progress cache"):
+    if st.button("Clear Cache", help="Clear student progress cache"):
         # Clear all student progress files
         logs_dir = Path("Logs")
         if logs_dir.exists():
@@ -38,7 +38,7 @@ with col_clear:
                     progress_file = student_dir / "progress.json"
                     if progress_file.exists():
                         progress_file.unlink()
-                        st.success(f"✅ Cleared cache for {student_dir.name}")
+                        st.success(f"Cleared cache for {student_dir.name}")
             st.rerun()
 
 # --- Load available project JSON files ---
@@ -46,8 +46,8 @@ project_files = list(projects_dir.glob("*_configuration.json"))
 
 if not project_files:
     st.warning("No projects found. Please contact your instructor.")
-    st.info("💡 Instructors can create projects using the Creator Portal.")
-    if st.button("🔄 Refresh Projects"):
+    st.info("Instructors can create projects using the Creator Portal.")
+    if st.button("Refresh Projects"):
         st.rerun()
     st.stop()
 
@@ -62,7 +62,7 @@ selected_project_path = project_map[selected_project_name]
 with open(selected_project_path, "r", encoding="utf-8") as f:
     project_data = json.load(f)
 
-st.subheader(f"📘 {project_data.get('project', 'Unnamed Project')}")
+st.subheader(f"{project_data.get('project', 'Unnamed Project')}")
 st.caption(project_data.get("description", ""))
 
 # --- Student ID ---
@@ -80,7 +80,7 @@ if not all_tasks:
 # --- Load student progress ---
 progress = task_validator.get_student_progress(student_id)
 
-st.markdown("### 📊 Your Progress")
+st.markdown("### Your Progress")
 col1, col2, col3, col4 = st.columns(4)
 with col1:
     st.metric("Completed Tasks", len(progress["completed_tasks"]))
@@ -117,14 +117,14 @@ if current_task:
     with col_left:
         # Check if current task is completed
         is_current_completed = current_task["id"] in progress["completed_tasks"]
-        status_icon = "✅" if is_current_completed else "🎯"
+        status_icon = "Completed" if is_current_completed else "In Progress"
         
         st.markdown(f"### {status_icon} Task {current_task['id']}: {current_task['name']}")
         st.markdown(f"**Description:** {current_task['description']}")
         
         # Show completion status
         if is_current_completed:
-            st.success("✅ This task has been completed!")
+            st.success("This task has been completed!")
             # Show last validation results
             task_logs_dir = Path("Logs") / student_id / f"task_{current_task['id']}"
             if task_logs_dir.exists():
@@ -143,21 +143,21 @@ if current_task:
                         col_static, col_playwright = st.columns(2)
                         with col_static:
                             if static_val.get('success'):
-                                st.success("✅ Static validation passed")
+                                st.success("Static validation passed")
                             else:
-                                st.error("❌ Static validation failed")
+                                st.error("Static validation failed")
                         
                         with col_playwright:
                             if playwright_val.get('success'):
-                                st.success("🎭 Playwright tests passed")
+                                st.success("Playwright tests passed")
                             elif playwright_val.get('message'):
-                                st.info(f"🎭 {playwright_val['message']}")
+                                st.info(f"{playwright_val['message']}")
                             else:
-                                st.warning("🎭 Playwright tests had issues")
+                                st.warning("Playwright tests had issues")
                     except:
-                        st.write("📊 Task completed (details unavailable)")
+                        st.write("Task completed (details unavailable)")
         else:
-            st.info("🎯 Complete this task to unlock the next one")
+            st.info("Complete this task to unlock the next one")
 
         st.markdown("**Requirements:**")
         validation = current_task.get("validation_rules", {})
@@ -197,18 +197,18 @@ if current_task:
 
                         result = task_validator.validate_task(current_task["id"], tmp, student_id)
                         if result.get("success"):
-                            st.success(f"✅ Validation completed! Score: {result['total_score']} / {result['max_score']}")
+                            st.success(f"Validation completed! Score: {result['total_score']} / {result['max_score']}")
                             task_validator.update_student_progress(student_id, result)
                             st.rerun()
                         else:
-                            st.error(f"❌ Validation failed: {result.get('error', 'Unknown error')}")
+                            st.error(f"Validation failed: {result.get('error', 'Unknown error')}")
 
         with col_b:
             if st.button("Submit", key=f"submit_{current_task['id']}"):
                 st.success("Task submitted successfully!")
 
 st.divider()
-st.subheader("📋 All Tasks")
+st.subheader("All Tasks")
 
 # --- Display all tasks below ---
 for t in all_tasks:
@@ -217,7 +217,7 @@ for t in all_tasks:
     
     # Check if task is completed
     is_completed = t["id"] in progress["completed_tasks"]
-    task_status = "✅ Completed" if is_completed else "⏳ Pending"
+    task_status = "Completed" if is_completed else "Pending"
     
     with st.expander(f"Task {t['id']}: {t['name']} - {task_status}"):
         # Task status and verification info
@@ -228,7 +228,7 @@ for t in all_tasks:
             st.write(f"**Points:** {t.get('validation_rules', {}).get('points', 0)}")
             
             if is_completed:
-                st.success("✅ Task completed successfully!")
+                st.success("Task completed successfully!")
                 # Show completion details if available
                 task_logs_dir = Path("Logs") / student_id / f"task_{t['id']}"
                 if task_logs_dir.exists():
@@ -245,18 +245,18 @@ for t in all_tasks:
                             playwright_val = result_data.get('playwright_validation', {})
                             
                             if static_val.get('success'):
-                                st.write("✅ Static validation passed")
+                                st.write("Static validation passed")
                             if playwright_val.get('success'):
-                                st.write("✅ Playwright validation passed")
+                                st.write("Playwright validation passed")
                             elif playwright_val.get('message'):
-                                st.write(f"ℹ️ Playwright: {playwright_val['message']}")
+                                st.write(f"Playwright: {playwright_val['message']}")
                         except Exception as e:
-                            st.write("📊 Validation completed (details unavailable)")
+                            st.write("Validation completed (details unavailable)")
         
         with col_verify:
             if is_completed:
                 st.markdown("### Verification Status")
-                st.success("✅ Verified")
+                st.success("Verified")
                 
                 # Show verification details
                 task_logs_dir = Path("Logs") / student_id / f"task_{t['id']}"
@@ -271,7 +271,7 @@ for t in all_tasks:
                             # Show screenshots if available
                             screenshots = result_data.get('screenshots', [])
                             if screenshots:
-                                st.write("📸 Screenshots captured:")
+                                st.write("Screenshots captured:")
                                 for i, screenshot in enumerate(screenshots[:3]):  # Show first 3
                                     if Path(screenshot).exists():
                                         st.image(screenshot, caption=f"Screenshot {i+1}", width=200)
@@ -282,10 +282,10 @@ for t in all_tasks:
                                 st.caption(f"Verified: {timestamp[:19]}")
                                 
                         except Exception as e:
-                            st.write("📊 Verification completed")
+                            st.write("Verification completed")
             else:
                 st.markdown("### Verification Status")
-                st.info("⏳ Not verified")
+                st.info("Not verified")
                 st.caption("Complete the task to see verification details")
 
         st.write("**Required Files:**")
@@ -323,10 +323,10 @@ for t in all_tasks:
                             playwright_val = result_data.get('playwright_validation', {})
                             
                             if playwright_val.get('success'):
-                                st.success("🎭 Playwright tests passed")
+                                st.success("Playwright tests passed")
                             elif playwright_val.get('message'):
-                                st.info(f"🎭 Playwright: {playwright_val['message']}")
+                                st.info(f"Playwright: {playwright_val['message']}")
                             else:
-                                st.warning("🎭 Playwright tests had issues")
+                                st.warning("Playwright tests had issues")
                         except:
                             pass
