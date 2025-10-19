@@ -13,6 +13,11 @@ projects_dir = project_root / "projects"  # <-- folder containing creator's JSON
 sys.path.insert(0, str(validator_dir))
 
 try:
+    # Clear module cache to ensure we get the latest version
+    import sys
+    if 'task_validator' in sys.modules:
+        del sys.modules['task_validator']
+    
     from task_validator import TaskValidator
 except ImportError:
     st.error("TaskValidator not found. Please ensure the validator module is properly configured.")
@@ -77,8 +82,9 @@ if not all_tasks:
     st.warning("No tasks defined in this project.")
     st.stop()
 
-# --- Load student progress ---
-progress = task_validator.get_student_progress(student_id)
+# --- Load student progress for this specific project ---
+project_id = project_data.get("project", "unknown").replace(" ", "_").lower()
+progress = task_validator.get_student_progress(student_id, project_id)
 
 st.markdown("### Your Progress")
 col1, col2, col3, col4 = st.columns(4)
@@ -198,7 +204,7 @@ if current_task:
                         result = task_validator.validate_task(current_task["id"], tmp, student_id)
                         if result.get("success"):
                             st.success(f"Validation completed! Score: {result['total_score']} / {result['max_score']}")
-                            task_validator.update_student_progress(student_id, result)
+                            task_validator.update_student_progress(student_id, result, project_id)
                             st.rerun()
                         else:
                             st.error(f"Validation failed: {result.get('error', 'Unknown error')}")
