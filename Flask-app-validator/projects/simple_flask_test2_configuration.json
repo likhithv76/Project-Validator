@@ -1,0 +1,250 @@
+{
+  "project": "Simple Flask Test2",
+  "description": "A simple Flask application for testing project validation and progress isolation",
+  "tasks": [
+    {
+      "id": 1,
+      "name": "about Validation",
+      "description": "Auto-generated validation for about.html",
+      "required_files": [
+        "about.html"
+      ],
+      "validation_rules": {
+        "type": "html",
+        "file": "about.html",
+        "points": 46,
+        "mustHaveImports": [
+          "Flask",
+          "render_template"
+        ],
+        "mustHaveRoutes": [
+          "/",
+          "/about",
+          "/contact"
+        ],
+        "mustHaveMethods": [
+          "GET",
+          "POST"
+        ]
+      },
+      "playwright_test": {
+        "route": "/about",
+        "actions": [],
+        "validate": [
+          {
+            "type": "text_present",
+            "value": "successful"
+          },
+          {
+            "type": "text_present",
+            "value": "Registration successful"
+          },
+          {
+            "type": "text_present",
+            "value": "Login successful"
+          }
+        ],
+        "points": 10
+      },
+      "unlock_condition": {
+        "min_score": 0,
+        "required_tasks": []
+      }
+    },
+    {
+      "id": 2,
+      "name": "base Validation",
+      "description": "Auto-generated validation for base.html",
+      "required_files": [
+        "base.html"
+      ],
+      "validation_rules": {
+        "type": "html",
+        "file": "base.html",
+        "points": 26,
+        "mustHaveElements": [
+          "html",
+          "head",
+          "body",
+          "nav"
+        ],
+        "mustHaveClasses": [
+          "navbar",
+          "container"
+        ],
+        "mustHaveContent": [
+          "Simple Flask App"
+        ]
+      },
+      "playwright_test": {
+        "route": "/base",
+        "actions": [
+          {
+            "selector_type": "class",
+            "selector_value": "btn-close",
+            "click": true
+          }
+        ],
+        "validate": [
+          {
+            "type": "text_present",
+            "value": "successful"
+          },
+          {
+            "type": "text_present",
+            "value": "Registration successful"
+          },
+          {
+            "type": "text_present",
+            "value": "Login successful"
+          }
+        ],
+        "points": 10
+      },
+      "unlock_condition": {
+        "min_score": 0,
+        "required_tasks": []
+      }
+    },
+    {
+      "id": 3,
+      "name": "contact Validation",
+      "description": "Auto-generated validation for contact.html",
+      "required_files": [
+        "contact.html"
+      ],
+      "validation_rules": {
+        "type": "html",
+        "file": "contact.html",
+        "points": 30,
+        "mustHaveElements": [
+          "form",
+          "input",
+          "textarea",
+          "button"
+        ],
+        "mustHaveInputs": [
+          "name",
+          "email",
+          "message"
+        ],
+        "mustHaveContent": [
+          "Contact Us",
+          "Send Message"
+        ]
+      },
+      "playwright_test": {
+        "route": "/contact",
+        "actions": [
+          {
+            "selector_type": "class",
+            "selector_value": "form-control",
+            "input_variants": [
+              "user123",
+              "u",
+              "verylongusername_exceeding_limit",
+              "test_user",
+              "admin"
+            ]
+          },
+          {
+            "selector_type": "class",
+            "selector_value": "form-control",
+            "input_variants": [
+              "test@example.com",
+              "invalid_email",
+              "user@domain",
+              "test@",
+              "user@domain.com"
+            ]
+          },
+          {
+            "selector_type": "class",
+            "selector_value": "btn",
+            "click": true
+          }
+        ],
+        "validate": [
+          {
+            "type": "text_present",
+            "value": "successful"
+          },
+          {
+            "type": "text_present",
+            "value": "Registration successful"
+          },
+          {
+            "type": "text_present",
+            "value": "Login successful"
+          },
+          {
+            "type": "text_present",
+            "value": "Username too short"
+          },
+          {
+            "type": "text_present",
+            "value": "Username already exists"
+          },
+          {
+            "type": "text_present",
+            "value": "Invalid email format"
+          },
+          {
+            "type": "text_present",
+            "value": "Email is required"
+          }
+        ],
+        "points": 17
+      },
+      "unlock_condition": {
+        "min_score": 0,
+        "required_tasks": []
+      }
+    },
+    {
+      "id": 4,
+      "name": "index Validation",
+      "description": "Auto-generated validation for index.html",
+      "required_files": [
+        "index.html"
+      ],
+      "validation_rules": {
+        "type": "html",
+        "file": "index.html",
+        "points": 44,
+        "mustHaveRoutes": [
+          "/api/users"
+        ],
+        "mustHaveImports": [
+          "jsonify"
+        ],
+        "mustHaveMethods": [
+          "GET"
+        ]
+      },
+      "playwright_test": {
+        "route": "/index",
+        "actions": [],
+        "validate": [
+          {
+            "type": "text_present",
+            "value": "successful"
+          },
+          {
+            "type": "text_present",
+            "value": "Registration successful"
+          },
+          {
+            "type": "text_present",
+            "value": "Login successful"
+          }
+        ],
+        "points": 10
+      },
+      "unlock_condition": {
+        "min_score": 0,
+        "required_tasks": []
+      }
+    }
+  ]
+}

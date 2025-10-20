@@ -1,0 +1,1043 @@
+{
+  "project": "New Project",
+  "description": "Auto-generated progressive validation project",
+  "tasks": [
+    {
+      "id": 1,
+      "name": "base Validation",
+      "description": "Auto-generated validation for base.html",
+      "required_files": [
+        "base.html"
+      ],
+      "validation_rules": {
+        "type": "html",
+        "file": "base.html",
+        "points": 12,
+        "generatedTests": [],
+        "analysis": {
+          "elements": [
+            {
+              "tag": "nav",
+              "attributes": {
+                "class": "navbar"
+              },
+              "id": null,
+              "class": "navbar",
+              "text": "<h1>Flask Test App</h1>"
+            },
+            {
+              "tag": "h1",
+              "attributes": {},
+              "id": null,
+              "class": null,
+              "text": "Flask Test App"
+            },
+            {
+              "tag": "div",
+              "attributes": {
+                "class": "container"
+              },
+              "id": null,
+              "class": "container",
+              "text": "{% with messages = get_flashed_messages(with_categories=true) %}\r\n            {% if messages %}\r\n                {% for category, message in messages %}\r\n                    <div class=\"alert alert-{{ 'success' if category == 'success' else 'error' }}\">\r\n                        {{ message }}"
+            },
+            {
+              "tag": "div",
+              "attributes": {
+                "class": "alert alert-{{ ",
+                "success": true,
+                "if": true,
+                "category": true,
+                "else": true,
+                "error": true
+              },
+              "id": null,
+              "class": "alert alert-{{ ",
+              "text": "{{ message }}"
+            },
+            {
+              "tag": "footer",
+              "attributes": {
+                "style": "background-color: #f8f9fa; padding: 1rem; text-align: center; margin-top: 2rem;"
+              },
+              "id": null,
+              "class": null,
+              "text": "<p>&copy; 2024 Flask Test App</p>"
+            },
+            {
+              "tag": "p",
+              "attributes": {},
+              "id": null,
+              "class": null,
+              "text": "&copy; 2024 Flask Test App"
+            }
+          ],
+          "selectors": []
+        }
+      },
+      "playwright_test": {
+        "route": "/base",
+        "actions": [],
+        "validate": [
+          {
+            "type": "text_present",
+            "value": "successful"
+          },
+          {
+            "type": "text_present",
+            "value": "Registration successful"
+          },
+          {
+            "type": "text_present",
+            "value": "Login successful"
+          }
+        ],
+        "points": 10
+      },
+      "unlock_condition": {
+        "min_score": 0,
+        "required_tasks": []
+      }
+    },
+    {
+      "id": 2,
+      "name": "dashboard Validation",
+      "description": "Auto-generated validation for dashboard.html",
+      "required_files": [
+        "dashboard.html"
+      ],
+      "validation_rules": {
+        "type": "html",
+        "file": "dashboard.html",
+        "points": 22,
+        "generatedTests": [],
+        "analysis": {
+          "elements": [
+            {
+              "tag": "h2",
+              "attributes": {},
+              "id": null,
+              "class": null,
+              "text": "Welcome to your Dashboard, {{ username }}!"
+            },
+            {
+              "tag": "div",
+              "attributes": {
+                "class": "user_profile"
+              },
+              "id": null,
+              "class": "user_profile",
+              "text": "<h3>User Profile</h3>\r\n    <p>Username: {{ username }}</p>\r\n    <p>Email: user@example.com</p>"
+            },
+            {
+              "tag": "h3",
+              "attributes": {},
+              "id": null,
+              "class": null,
+              "text": "User Profile"
+            },
+            {
+              "tag": "p",
+              "attributes": {},
+              "id": null,
+              "class": null,
+              "text": "Username: {{ username }}"
+            },
+            {
+              "tag": "p",
+              "attributes": {},
+              "id": null,
+              "class": null,
+              "text": "Username: {{ username }}"
+            },
+            {
+              "tag": "div",
+              "attributes": {},
+              "id": null,
+              "class": null,
+              "text": "<a href=\"{{ url_for('profile') }}\" class=\"btn\">View Profile</a>\r\n    <a href=\"{{ url_for('logout') }}\" class=\"btn logout_button\">Logout</a>"
+            },
+            {
+              "tag": "a",
+              "attributes": {
+                "href": "{{ url_for(",
+                "profile": true,
+                "class": "btn"
+              },
+              "id": null,
+              "class": "btn",
+              "text": "View Profile"
+            },
+            {
+              "tag": "a",
+              "attributes": {
+                "href": "{{ url_for(",
+                "logout": true,
+                "class": "btn logout_button"
+              },
+              "id": null,
+              "class": "btn logout_button",
+              "text": "Logout"
+            },
+            {
+              "tag": "div",
+              "attributes": {
+                "style": "margin-top: 2rem;"
+              },
+              "id": null,
+              "class": null,
+              "text": "<h3>Dashboard Content</h3>\r\n    <p>This is your personal dashboard where you can manage your account.</p>"
+            },
+            {
+              "tag": "h3",
+              "attributes": {},
+              "id": null,
+              "class": null,
+              "text": "User Profile"
+            },
+            {
+              "tag": "p",
+              "attributes": {},
+              "id": null,
+              "class": null,
+              "text": "Username: {{ username }}"
+            }
+          ],
+          "selectors": []
+        }
+      },
+      "playwright_test": {
+        "route": "/dashboard",
+        "actions": [],
+        "validate": [
+          {
+            "type": "text_present",
+            "value": "successful"
+          },
+          {
+            "type": "text_present",
+            "value": "Registration successful"
+          },
+          {
+            "type": "text_present",
+            "value": "Login successful"
+          }
+        ],
+        "points": 10
+      },
+      "unlock_condition": {
+        "min_score": 0,
+        "required_tasks": []
+      }
+    },
+    {
+      "id": 3,
+      "name": "index Validation",
+      "description": "Auto-generated validation for index.html",
+      "required_files": [
+        "index.html"
+      ],
+      "validation_rules": {
+        "type": "html",
+        "file": "index.html",
+        "points": 16,
+        "generatedTests": [],
+        "analysis": {
+          "elements": [
+            {
+              "tag": "h2",
+              "attributes": {},
+              "id": null,
+              "class": null,
+              "text": "Welcome to Flask Test App"
+            },
+            {
+              "tag": "p",
+              "attributes": {},
+              "id": null,
+              "class": null,
+              "text": "This is a test application for Playwright UI validation."
+            },
+            {
+              "tag": "div",
+              "attributes": {
+                "class": "user_profile"
+              },
+              "id": null,
+              "class": "user_profile",
+              "text": "<h3>Welcome to our application!</h3>\r\n    <p>Please register or login to continue.</p>"
+            },
+            {
+              "tag": "h3",
+              "attributes": {},
+              "id": null,
+              "class": null,
+              "text": "Welcome to our application!"
+            },
+            {
+              "tag": "p",
+              "attributes": {},
+              "id": null,
+              "class": null,
+              "text": "This is a test application for Playwright UI validation."
+            },
+            {
+              "tag": "div",
+              "attributes": {},
+              "id": null,
+              "class": null,
+              "text": "<a href=\"{{ url_for('register') }}\" class=\"btn\">Register</a>\r\n    <a href=\"{{ url_for('login') }}\" class=\"btn\">Login</a>"
+            },
+            {
+              "tag": "a",
+              "attributes": {
+                "href": "{{ url_for(",
+                "register": true,
+                "class": "btn"
+              },
+              "id": null,
+              "class": "btn",
+              "text": "Register"
+            },
+            {
+              "tag": "a",
+              "attributes": {
+                "href": "{{ url_for(",
+                "login": true,
+                "class": "btn"
+              },
+              "id": null,
+              "class": "btn",
+              "text": "Login"
+            }
+          ],
+          "selectors": []
+        }
+      },
+      "playwright_test": {
+        "route": "/index",
+        "actions": [],
+        "validate": [
+          {
+            "type": "text_present",
+            "value": "successful"
+          },
+          {
+            "type": "text_present",
+            "value": "Registration successful"
+          },
+          {
+            "type": "text_present",
+            "value": "Login successful"
+          }
+        ],
+        "points": 10
+      },
+      "unlock_condition": {
+        "min_score": 0,
+        "required_tasks": []
+      }
+    },
+    {
+      "id": 4,
+      "name": "login Validation",
+      "description": "Auto-generated validation for login.html",
+      "required_files": [
+        "login.html"
+      ],
+      "validation_rules": {
+        "type": "html",
+        "file": "login.html",
+        "points": 22,
+        "generatedTests": [],
+        "analysis": {
+          "elements": [
+            {
+              "tag": "h2",
+              "attributes": {},
+              "id": null,
+              "class": null,
+              "text": "User Login"
+            },
+            {
+              "tag": "form",
+              "attributes": {
+                "method": "POST",
+                "class": "login_form"
+              },
+              "id": null,
+              "class": "login_form",
+              "text": "<div class=\"form-group\">\r\n        <label for=\"username\">Username:</label>\r\n        <input type=\"text\" id=\"username\" name=\"username\" class=\"login_username\" required>\r\n    </div>\r\n    \r\n    <div class=\"form-group\">\r\n        <label for=\"password\">Password:</label>\r\n        <input type=\"password\" id=\"password\" name=\"password\" class=\"login_password\" required>\r\n    </div>\r\n    \r\n    <button type=\"submit\" class=\"btn login_submit\">Login</button>"
+            },
+            {
+              "tag": "div",
+              "attributes": {
+                "class": "form-group"
+              },
+              "id": null,
+              "class": "form-group",
+              "text": "<label for=\"username\">Username:</label>\r\n        <input type=\"text\" id=\"username\" name=\"username\" class=\"login_username\" required>"
+            },
+            {
+              "tag": "label",
+              "attributes": {
+                "for": "username"
+              },
+              "id": null,
+              "class": null,
+              "text": "Username:"
+            },
+            {
+              "tag": "input",
+              "attributes": {
+                "type": "text",
+                "id": "username",
+                "name": "username",
+                "class": "login_username",
+                "required": true
+              },
+              "id": "username",
+              "class": "login_username",
+              "text": ""
+            },
+            {
+              "tag": "div",
+              "attributes": {
+                "class": "form-group"
+              },
+              "id": null,
+              "class": "form-group",
+              "text": "<label for=\"username\">Username:</label>\r\n        <input type=\"text\" id=\"username\" name=\"username\" class=\"login_username\" required>"
+            },
+            {
+              "tag": "label",
+              "attributes": {
+                "for": "password"
+              },
+              "id": null,
+              "class": null,
+              "text": "Password:"
+            },
+            {
+              "tag": "input",
+              "attributes": {
+                "type": "password",
+                "id": "password",
+                "name": "password",
+                "class": "login_password",
+                "required": true
+              },
+              "id": "password",
+              "class": "login_password",
+              "text": ""
+            },
+            {
+              "tag": "button",
+              "attributes": {
+                "type": "submit",
+                "class": "btn login_submit"
+              },
+              "id": null,
+              "class": "btn login_submit",
+              "text": "Login"
+            },
+            {
+              "tag": "p",
+              "attributes": {},
+              "id": null,
+              "class": null,
+              "text": "Don't have an account? <a href=\"{{ url_for('register') }}\">Register here</a>"
+            },
+            {
+              "tag": "a",
+              "attributes": {
+                "href": "{{ url_for(",
+                "register": true
+              },
+              "id": null,
+              "class": null,
+              "text": "Register here"
+            }
+          ],
+          "selectors": []
+        }
+      },
+      "playwright_test": {
+        "route": "/login",
+        "actions": [
+          {
+            "selector_type": "class",
+            "selector_value": "login_username",
+            "input_variants": [
+              "user123",
+              "u",
+              "verylongusername_exceeding_limit",
+              "test_user",
+              "admin"
+            ]
+          },
+          {
+            "selector_type": "class",
+            "selector_value": "login_password",
+            "input_variants": [
+              "12345",
+              "password",
+              "Password123!",
+              "Weakpass",
+              "Strong@Pass123"
+            ]
+          },
+          {
+            "selector_type": "class",
+            "selector_value": "btn",
+            "click": true
+          }
+        ],
+        "validate": [
+          {
+            "type": "text_present",
+            "value": "successful"
+          },
+          {
+            "type": "text_present",
+            "value": "Registration successful"
+          },
+          {
+            "type": "text_present",
+            "value": "Login successful"
+          },
+          {
+            "type": "text_present",
+            "value": "Username too short"
+          },
+          {
+            "type": "text_present",
+            "value": "Username already exists"
+          },
+          {
+            "type": "text_present",
+            "value": "Password too short"
+          },
+          {
+            "type": "text_present",
+            "value": "Add special characters"
+          },
+          {
+            "type": "url_redirect",
+            "value": "/dashboard"
+          }
+        ],
+        "points": 17
+      },
+      "unlock_condition": {
+        "min_score": 0,
+        "required_tasks": []
+      }
+    },
+    {
+      "id": 5,
+      "name": "profile Validation",
+      "description": "Auto-generated validation for profile.html",
+      "required_files": [
+        "profile.html"
+      ],
+      "validation_rules": {
+        "type": "html",
+        "file": "profile.html",
+        "points": 32,
+        "generatedTests": [],
+        "analysis": {
+          "elements": [
+            {
+              "tag": "h2",
+              "attributes": {},
+              "id": null,
+              "class": null,
+              "text": "User Profile"
+            },
+            {
+              "tag": "div",
+              "attributes": {
+                "class": "user_profile"
+              },
+              "id": null,
+              "class": "user_profile",
+              "text": "<h3>Profile Information</h3>\r\n    <p>Username: {{ username }}</p>\r\n    <p>Email: user@example.com</p>"
+            },
+            {
+              "tag": "h3",
+              "attributes": {},
+              "id": null,
+              "class": null,
+              "text": "Profile Information"
+            },
+            {
+              "tag": "p",
+              "attributes": {},
+              "id": null,
+              "class": null,
+              "text": "Username: {{ username }}"
+            },
+            {
+              "tag": "p",
+              "attributes": {},
+              "id": null,
+              "class": null,
+              "text": "Username: {{ username }}"
+            },
+            {
+              "tag": "form",
+              "attributes": {
+                "class": "profile_form"
+              },
+              "id": null,
+              "class": "profile_form",
+              "text": "<div class=\"form-group\">\r\n        <label for=\"display_name\">Display Name:</label>\r\n        <input type=\"text\" id=\"display_name\" name=\"display_name\" value=\"{{ username }}\" class=\"profile_display_name\">\r\n    </div>\r\n    \r\n    <div class=\"form-group\">\r\n        <label for=\"bio\">Bio:</label>\r\n        <textarea id=\"bio\" name=\"bio\" class=\"profile_bio\" rows=\"3\">This is a test user profile.</textarea>\r\n    </div>\r\n    \r\n    <button type=\"submit\" class=\"btn update_button\">Update Profile</button>"
+            },
+            {
+              "tag": "div",
+              "attributes": {
+                "class": "form-group"
+              },
+              "id": null,
+              "class": "form-group",
+              "text": "<label for=\"display_name\">Display Name:</label>\r\n        <input type=\"text\" id=\"display_name\" name=\"display_name\" value=\"{{ username }}\" class=\"profile_display_name\">"
+            },
+            {
+              "tag": "label",
+              "attributes": {
+                "for": "display_name"
+              },
+              "id": null,
+              "class": null,
+              "text": "Display Name:"
+            },
+            {
+              "tag": "input",
+              "attributes": {
+                "type": "text",
+                "id": "display_name",
+                "name": "display_name",
+                "value": "{{ username }}",
+                "class": "profile_display_name"
+              },
+              "id": "display_name",
+              "class": "profile_display_name",
+              "text": ""
+            },
+            {
+              "tag": "div",
+              "attributes": {
+                "class": "form-group"
+              },
+              "id": null,
+              "class": "form-group",
+              "text": "<label for=\"display_name\">Display Name:</label>\r\n        <input type=\"text\" id=\"display_name\" name=\"display_name\" value=\"{{ username }}\" class=\"profile_display_name\">"
+            },
+            {
+              "tag": "label",
+              "attributes": {
+                "for": "bio"
+              },
+              "id": null,
+              "class": null,
+              "text": "Bio:"
+            },
+            {
+              "tag": "textarea",
+              "attributes": {
+                "id": "bio",
+                "name": "bio",
+                "class": "profile_bio",
+                "rows": "3"
+              },
+              "id": "bio",
+              "class": "profile_bio",
+              "text": "This is a test user profile."
+            },
+            {
+              "tag": "button",
+              "attributes": {
+                "type": "submit",
+                "class": "btn update_button"
+              },
+              "id": null,
+              "class": "btn update_button",
+              "text": "Update Profile"
+            },
+            {
+              "tag": "div",
+              "attributes": {
+                "style": "margin-top: 1rem;"
+              },
+              "id": null,
+              "class": null,
+              "text": "<a href=\"{{ url_for('dashboard') }}\" class=\"btn\">Back to Dashboard</a>\r\n    <a href=\"{{ url_for('logout') }}\" class=\"btn logout_button\">Logout</a>"
+            },
+            {
+              "tag": "a",
+              "attributes": {
+                "href": "{{ url_for(",
+                "dashboard": true,
+                "class": "btn"
+              },
+              "id": null,
+              "class": "btn",
+              "text": "Back to Dashboard"
+            },
+            {
+              "tag": "a",
+              "attributes": {
+                "href": "{{ url_for(",
+                "logout": true,
+                "class": "btn logout_button"
+              },
+              "id": null,
+              "class": "btn logout_button",
+              "text": "Logout"
+            }
+          ],
+          "selectors": []
+        }
+      },
+      "playwright_test": {
+        "route": "/profile",
+        "actions": [
+          {
+            "selector_type": "class",
+            "selector_value": "profile_display_name",
+            "input_variants": [
+              "user123",
+              "u",
+              "verylongusername_exceeding_limit",
+              "test_user",
+              "admin"
+            ]
+          },
+          {
+            "selector_type": "class",
+            "selector_value": "btn",
+            "click": true
+          }
+        ],
+        "validate": [
+          {
+            "type": "text_present",
+            "value": "successful"
+          },
+          {
+            "type": "text_present",
+            "value": "Registration successful"
+          },
+          {
+            "type": "text_present",
+            "value": "Login successful"
+          },
+          {
+            "type": "text_present",
+            "value": "Username too short"
+          },
+          {
+            "type": "text_present",
+            "value": "Username already exists"
+          }
+        ],
+        "points": 15
+      },
+      "unlock_condition": {
+        "min_score": 0,
+        "required_tasks": []
+      }
+    },
+    {
+      "id": 6,
+      "name": "register Validation",
+      "description": "Auto-generated validation for register.html",
+      "required_files": [
+        "register.html"
+      ],
+      "validation_rules": {
+        "type": "html",
+        "file": "register.html",
+        "points": 34,
+        "generatedTests": [],
+        "analysis": {
+          "elements": [
+            {
+              "tag": "h2",
+              "attributes": {},
+              "id": null,
+              "class": null,
+              "text": "User Registration"
+            },
+            {
+              "tag": "form",
+              "attributes": {
+                "method": "POST",
+                "class": "register_form"
+              },
+              "id": null,
+              "class": "register_form",
+              "text": "<div class=\"form-group\">\r\n        <label for=\"username\">Username:</label>\r\n        <input type=\"text\" id=\"username\" name=\"username\" class=\"register_form_username\" required>\r\n    </div>\r\n    \r\n    <div class=\"form-group\">\r\n        <label for=\"email\">Email:</label>\r\n        <input type=\"email\" id=\"email\" name=\"email\" class=\"register_form_email\" required>\r\n    </div>\r\n    \r\n    <div class=\"form-group\">\r\n        <label for=\"password\">Password:</label>\r\n        <input type=\"password\" id=\"password\" name=\"password\" class=\"register_form_password\" required>\r\n    </div>\r\n    \r\n    <div class=\"form-group\">\r\n        <label for=\"confirm_password\">Confirm Password:</label>\r\n        <input type=\"password\" id=\"confirm_password\" name=\"confirm_password\" class=\"register_form_confirm_password\" required>\r\n    </div>\r\n    \r\n    <button type=\"submit\" class=\"btn register_form_submit_button\">Register</button>"
+            },
+            {
+              "tag": "div",
+              "attributes": {
+                "class": "form-group"
+              },
+              "id": null,
+              "class": "form-group",
+              "text": "<label for=\"username\">Username:</label>\r\n        <input type=\"text\" id=\"username\" name=\"username\" class=\"register_form_username\" required>"
+            },
+            {
+              "tag": "label",
+              "attributes": {
+                "for": "username"
+              },
+              "id": null,
+              "class": null,
+              "text": "Username:"
+            },
+            {
+              "tag": "input",
+              "attributes": {
+                "type": "text",
+                "id": "username",
+                "name": "username",
+                "class": "register_form_username",
+                "required": true
+              },
+              "id": "username",
+              "class": "register_form_username",
+              "text": ""
+            },
+            {
+              "tag": "div",
+              "attributes": {
+                "class": "form-group"
+              },
+              "id": null,
+              "class": "form-group",
+              "text": "<label for=\"username\">Username:</label>\r\n        <input type=\"text\" id=\"username\" name=\"username\" class=\"register_form_username\" required>"
+            },
+            {
+              "tag": "label",
+              "attributes": {
+                "for": "email"
+              },
+              "id": null,
+              "class": null,
+              "text": "Email:"
+            },
+            {
+              "tag": "input",
+              "attributes": {
+                "type": "email",
+                "id": "email",
+                "name": "email",
+                "class": "register_form_email",
+                "required": true
+              },
+              "id": "email",
+              "class": "register_form_email",
+              "text": ""
+            },
+            {
+              "tag": "div",
+              "attributes": {
+                "class": "form-group"
+              },
+              "id": null,
+              "class": "form-group",
+              "text": "<label for=\"username\">Username:</label>\r\n        <input type=\"text\" id=\"username\" name=\"username\" class=\"register_form_username\" required>"
+            },
+            {
+              "tag": "label",
+              "attributes": {
+                "for": "password"
+              },
+              "id": null,
+              "class": null,
+              "text": "Password:"
+            },
+            {
+              "tag": "input",
+              "attributes": {
+                "type": "password",
+                "id": "password",
+                "name": "password",
+                "class": "register_form_password",
+                "required": true
+              },
+              "id": "password",
+              "class": "register_form_password",
+              "text": ""
+            },
+            {
+              "tag": "div",
+              "attributes": {
+                "class": "form-group"
+              },
+              "id": null,
+              "class": "form-group",
+              "text": "<label for=\"username\">Username:</label>\r\n        <input type=\"text\" id=\"username\" name=\"username\" class=\"register_form_username\" required>"
+            },
+            {
+              "tag": "label",
+              "attributes": {
+                "for": "confirm_password"
+              },
+              "id": null,
+              "class": null,
+              "text": "Confirm Password:"
+            },
+            {
+              "tag": "input",
+              "attributes": {
+                "type": "password",
+                "id": "confirm_password",
+                "name": "confirm_password",
+                "class": "register_form_confirm_password",
+                "required": true
+              },
+              "id": "confirm_password",
+              "class": "register_form_confirm_password",
+              "text": ""
+            },
+            {
+              "tag": "button",
+              "attributes": {
+                "type": "submit",
+                "class": "btn register_form_submit_button"
+              },
+              "id": null,
+              "class": "btn register_form_submit_button",
+              "text": "Register"
+            },
+            {
+              "tag": "p",
+              "attributes": {},
+              "id": null,
+              "class": null,
+              "text": "Already have an account? <a href=\"{{ url_for('login') }}\">Login here</a>"
+            },
+            {
+              "tag": "a",
+              "attributes": {
+                "href": "{{ url_for(",
+                "login": true
+              },
+              "id": null,
+              "class": null,
+              "text": "Login here"
+            }
+          ],
+          "selectors": []
+        }
+      },
+      "playwright_test": {
+        "route": "/register",
+        "actions": [
+          {
+            "selector_type": "class",
+            "selector_value": "register_form_username",
+            "input_variants": [
+              "user123",
+              "u",
+              "verylongusername_exceeding_limit",
+              "test_user",
+              "admin"
+            ]
+          },
+          {
+            "selector_type": "class",
+            "selector_value": "register_form_email",
+            "input_variants": [
+              "test@example.com",
+              "invalid_email",
+              "user@domain",
+              "test@",
+              "user@domain.com"
+            ]
+          },
+          {
+            "selector_type": "class",
+            "selector_value": "register_form_password",
+            "input_variants": [
+              "12345",
+              "password",
+              "Password123!",
+              "Weakpass",
+              "Strong@Pass123"
+            ]
+          },
+          {
+            "selector_type": "class",
+            "selector_value": "register_form_confirm_password",
+            "input_variants": [
+              "Password123!",
+              "Mismatch123",
+              "Strong@Pass123"
+            ]
+          },
+          {
+            "selector_type": "class",
+            "selector_value": "btn",
+            "click": true
+          }
+        ],
+        "validate": [
+          {
+            "type": "text_present",
+            "value": "successful"
+          },
+          {
+            "type": "text_present",
+            "value": "Registration successful"
+          },
+          {
+            "type": "text_present",
+            "value": "Login successful"
+          },
+          {
+            "type": "text_present",
+            "value": "Username too short"
+          },
+          {
+            "type": "text_present",
+            "value": "Username already exists"
+          },
+          {
+            "type": "text_present",
+            "value": "Invalid email format"
+          },
+          {
+            "type": "text_present",
+            "value": "Email is required"
+          },
+          {
+            "type": "text_present",
+            "value": "Password too short"
+          },
+          {
+            "type": "text_present",
+            "value": "Add special characters"
+          },
+          {
+            "type": "text_present",
+            "value": "Passwords must match"
+          },
+          {
+            "type": "url_redirect",
+            "value": "/login"
+          }
+        ],
+        "points": 20
+      },
+      "unlock_condition": {
+        "min_score": 0,
+        "required_tasks": []
+      }
+    }
+  ]
+}

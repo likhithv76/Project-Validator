@@ -14,13 +14,15 @@ sys.path.insert(0, str(validator_dir))
 
 try:
     # Clear module cache to ensure we get the latest version
-    import sys
     if 'task_validator' in sys.modules:
         del sys.modules['task_validator']
     
+    # Try importing TaskValidator
     from task_validator import TaskValidator
-except ImportError:
-    st.error("TaskValidator not found. Please ensure the validator module is properly configured.")
+    
+except ImportError as e:
+    st.error(f"TaskValidator import failed: {e}")
+    st.error("Please ensure the validator module is properly configured.")
     st.stop()
 
 st.set_page_config(page_title="Student Portal", layout="wide")
@@ -84,6 +86,15 @@ if not all_tasks:
 
 # --- Load student progress for this specific project ---
 project_id = project_data.get("project", "unknown").replace(" ", "_").lower()
+
+# Debug: Check method signature
+import inspect
+try:
+    sig = inspect.signature(task_validator.get_student_progress)
+    st.write(f"Method signature: {sig}")
+except Exception as e:
+    st.write(f"Error getting signature: {e}")
+
 progress = task_validator.get_student_progress(student_id, project_id)
 
 st.markdown("### Your Progress")

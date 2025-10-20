@@ -13,18 +13,6 @@ from typing import Dict, List, Any, Optional
 
 from playwright.async_api import async_playwright, Browser, BrowserContext, Page, expect
 
-try:
-    from .test_data_generator import test_data_generator
-except ImportError:
-    try:
-        from validator.test_data_generator import test_data_generator
-    except ImportError:
-        # Fallback for when running as standalone
-        import sys
-        from pathlib import Path
-        sys.path.append(str(Path(__file__).parent))
-        from test_data_generator import test_data_generator
-
 class PlaywrightUIRunner:
     """
     Handles Playwright UI validation based on JSON rules.

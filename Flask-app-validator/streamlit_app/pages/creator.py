@@ -2,6 +2,9 @@ import streamlit as st
 import subprocess
 import tempfile, zipfile, os, json
 from pathlib import Path
+import sys
+sys.path.append(str(Path(__file__).parent.parent))
+from gemini_generator import GeminiTestCaseGenerator
 
 st.set_page_config(page_title="Creator Portal", layout="wide")
 
@@ -65,12 +68,60 @@ if uploaded_zip:
                 st.error(f"Error reading file: {e}")
 
         st.markdown("---")
+        st.subheader("Testcase Generation Configuration")
+        
+        # Initialize Gemini generator
+        gemini_generator = GeminiTestCaseGenerator()
+        generation_method = gemini_generator.get_generation_method()
+        
+        # Configuration section
+        with st.expander("⚙️ Generation Settings", expanded=False):
+            col_config1, col_config2 = st.columns(2)
+            
+            with col_config1:
+                st.markdown("**Current Method:**")
+                if generation_method == 'AI':
+                    st.success(f"🤖 AI Generation (Gemini)")
+                if not gemini_generator.is_ai_enabled():
+                    st.warning("⚠️ Gemini AI not configured")
+                    st.code("Set GEMINI_API_KEY in .env")
+                else:
+                    st.info(f"📝 Parser Generation")
+                    
+            with col_config2:
+                st.markdown("**Configuration File:**")
+                st.code(".env")
+                if st.button("📁 Open Config", help="Edit .env to change settings"):
+                    st.info("Edit .env file to change TEST_CASE_GENERATOR_METHOD")
+
+        st.markdown("---")
         st.subheader("Auto-generate Testcases")
 
         if st.button("Generate Testcases", use_container_width=True):
             st.info("Generating testcases... Please wait.")
             try:
-                node_script = Path("streamlit_app/pages/autoTestcaseGenerator.js").resolve()
+                if generation_method == 'AI' and gemini_generator.is_ai_enabled():
+                    # Use Gemini AI generation
+                    st.info("🤖 Generating testcases using Gemini AI...")
+                    project_meta = {
+                        "project": "New Project",
+                        "description": "Auto-generated progressive validation project"
+                    }
+                    result_json = gemini_generator.generate_project_json_with_ai(tmp_dir, project_meta)
+                    
+                    # Save the generated JSON
+                    project_file = os.path.join(tmp_dir, "project_tasks.json")
+                    with open(project_file, "w") as f:
+                        json.dump(result_json, f, indent=2)
+                    
+                    st.success("✅ AI-generated testcases completed!")
+                    st.json(result_json)
+                    st.session_state.generated_json = result_json
+                    
+                else:
+                    # Fallback to original parser method
+                    st.info("📝 Generating testcases using parser method...")
+                    node_script = Path(__file__).parent / "autoTestcaseGenerator.js"
                 result = subprocess.run(
                     ["node", str(node_script), tmp_dir],
                     capture_output=True,
@@ -89,12 +140,12 @@ if uploaded_zip:
                         from datetime import datetime
                         st.session_state.generation_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     else:
-                        st.warning("Testcase JSON file not found.")
-                else:
-                    st.error("Testcase generation failed.")
-                    st.code(result.stderr)
+                            st.error(f"Parser generation failed: {result.stderr}")
+                        
             except Exception as e:
-                st.error(f"Error running Node generator: {e}")
+                st.error(f"Generation failed: {str(e)}")
+                if generation_method == 'AI':
+                    st.info("💡 Tip: Check your GEMINI_API_KEY in .env or try switching to PARSER mode")
 
     # ---------------------- RIGHT PANEL ----------------------
     with col_right:
@@ -116,17 +167,43 @@ if uploaded_zip:
             for i, task in enumerate(project_data["tasks"]):
                 with st.expander(f"Task {task['id']}: {task['name']}", expanded=False):
                     # Basic task info
-                    task["name"] = st.text_input(f"Task Name", value=task["name"], key=f"task_name_{i}")
-                    task["description"] = st.text_area(f"Description", value=task["description"], key=f"task_desc_{i}")
+                    new_name = st.text_input(f"Task Name", value=task["name"], key=f"task_name_{i}")
+                    new_description = st.text_area(f"Description", value=task["description"], key=f"task_desc_{i}")
                     
-                    # Required files - populate from analysis
+                    # Required files - use multi-select
                     st.markdown("**Required Files:**")
-                    required_files_text = "\n".join(task.get("required_files", []))
-                    task["required_files"] = st.text_area(
-                        "Required Files (one per line)", 
-                        value=required_files_text,
-                        key=f"required_files_{i}"
-                    ).split("\n")
+                    
+                    # Get available files from the project (if available)
+                    available_files = [
+                        "app.py", "requirements.txt", "templates/base.html", 
+                        "templates/index.html", "templates/about.html", 
+                        "templates/contact.html", "static/style.css", "static/script.js",
+                        "main.py", "run.py", "config.py", "models.py", "views.py",
+                        "templates/login.html", "templates/register.html", "templates/dashboard.html",
+                        "static/css/style.css", "static/js/script.js", "static/images/logo.png"
+                    ]
+                    
+                    # Add any files from the current task that aren't in the list
+                    current_files = task.get("required_files", [])
+                    for file in current_files:
+                        if file not in available_files:
+                            available_files.append(file)
+                    
+                    selected_files = st.multiselect(
+                        "Select Required Files",
+                        options=available_files,
+                        default=current_files,
+                        key=f"required_files_{i}",
+                        help="Select the files that students must include in their project"
+                    )
+                    
+                    # Update task data only if changed
+                    if new_name != task["name"]:
+                        task["name"] = new_name
+                    if new_description != task["description"]:
+                        task["description"] = new_description
+                    if selected_files != current_files:
+                        task["required_files"] = selected_files
                     
                     # Validation Rules - populate from analysis
                     st.markdown("**Validation Rules:**")
@@ -135,10 +212,22 @@ if uploaded_zip:
                     
                     col1, col2 = st.columns(2)
                     with col1:
-                        validation_rules["type"] = st.selectbox(
+                        # Get current values
+                        current_type = validation_rules.get("type", "html")
+                        current_points = validation_rules.get("points", 10)
+                        
+                        # Create form inputs
+                        # Handle case where current_type might not be in the list
+                        type_options = ["html", "css", "js", "python"]
+                        try:
+                            type_index = type_options.index(current_type)
+                        except ValueError:
+                            type_index = 0  # Default to "html" if not found
+                            
+                        new_type = st.selectbox(
                             "Type", 
-                            ["html", "css", "js", "python"], 
-                            index=["html", "css", "js", "python"].index(validation_rules.get("type", "html")),
+                            type_options, 
+                            index=type_index,
                             key=f"val_type_{i}"
                         )
                         
@@ -146,20 +235,34 @@ if uploaded_zip:
                         elements_count = len(analysis.get("elements", []))
                         forms_count = len(analysis.get("forms", []))
                         complexity_score = min(50, elements_count * 2 + forms_count * 5)
-                        validation_rules["points"] = st.number_input(
+                        new_points = st.number_input(
                             "Points", 
                             min_value=1, 
                             max_value=100, 
-                            value=max(validation_rules.get("points", 10), complexity_score),
+                            value=max(current_points, complexity_score),
                             key=f"val_points_{i}"
                         )
                     
                     with col2:
-                        validation_rules["file"] = st.text_input(
+                        current_file = validation_rules.get("file", "")
+                        new_file = st.text_input(
                             "File", 
-                            value=validation_rules.get("file", ""),
+                            value=current_file,
                             key=f"val_file_{i}"
                         )
+                    
+                    # Update validation rules only if changed
+                    if new_type != current_type:
+                        validation_rules["type"] = new_type
+                    if new_points != current_points:
+                        validation_rules["points"] = new_points
+                    if new_file != current_file:
+                        validation_rules["file"] = new_file
+                    
+                    # Initialize analysis variables
+                    elements = []
+                    forms = []
+                    links = []
                     
                     # Show analysis results
                     if analysis:
@@ -186,25 +289,36 @@ if uploaded_zip:
                     
                     # Playwright Test - populate from analysis
                     st.markdown("**Playwright Test:**")
-                    playwright_test = task.get("playwright_test", {})
+                    playwright_test = task.get("playwright_test", {}) or {}
                     
                     col3, col4 = st.columns(2)
                     with col3:
+                        # Get current values
+                        current_route = playwright_test.get("route", "")
+                        current_pw_points = playwright_test.get("points", validation_rules.get("points", 10))
+                        
                         # Generate route from file name
                         file_name = validation_rules.get("file", "")
                         route_suggestion = f"/{file_name.replace('.html', '').replace('.css', '').replace('.js', '')}" if file_name else ""
-                        playwright_test["route"] = st.text_input(
+                        
+                        new_route = st.text_input(
                             "Route", 
-                            value=playwright_test.get("route", route_suggestion),
+                            value=current_route or route_suggestion,
                             key=f"pw_route_{i}"
                         )
-                        playwright_test["points"] = st.number_input(
+                        new_pw_points = st.number_input(
                             "Points", 
                             min_value=1, 
                             max_value=100, 
-                            value=playwright_test.get("points", validation_rules.get("points", 10)),
+                            value=current_pw_points,
                             key=f"pw_points_{i}"
                         )
+                        
+                        # Update only if changed
+                        if new_route != current_route:
+                            playwright_test["route"] = new_route
+                        if new_pw_points != current_pw_points:
+                            playwright_test["points"] = new_pw_points
                     
                     with col4:
                         # Generate actions from analysis
@@ -323,28 +437,38 @@ if uploaded_zip:
                     
                     col5, col6 = st.columns(2)
                     with col5:
-                        unlock_condition["min_score"] = st.number_input(
+                        current_min_score = unlock_condition.get("min_score", 0)
+                        new_min_score = st.number_input(
                             "Min Score", 
                             min_value=0, 
                             max_value=100, 
-                            value=unlock_condition.get("min_score", 0),
+                            value=current_min_score,
                             key=f"unlock_score_{i}"
                         )
                     
                     with col6:
                         # Show available task IDs for reference
                         available_task_ids = [str(t["id"]) for t in project_data["tasks"] if t["id"] != task["id"]]
-                        required_tasks_text = ", ".join(map(str, unlock_condition.get("required_tasks", [])))
+                        current_required_tasks = unlock_condition.get("required_tasks", [])
+                        required_tasks_text = ", ".join(map(str, current_required_tasks))
                         st.caption(f"Available task IDs: {', '.join(available_task_ids)}")
                         required_tasks_input = st.text_input(
                             "Required Tasks (comma-separated IDs)",
                             value=required_tasks_text,
                             key=f"unlock_tasks_{i}"
                         )
+                        
+                        # Parse required tasks
                         try:
-                            unlock_condition["required_tasks"] = [int(x.strip()) for x in required_tasks_input.split(",") if x.strip()]
+                            new_required_tasks = [int(x.strip()) for x in required_tasks_input.split(",") if x.strip()]
                         except ValueError:
-                            unlock_condition["required_tasks"] = []
+                            new_required_tasks = current_required_tasks
+                    
+                    # Update only if changed
+                    if new_min_score != current_min_score:
+                        unlock_condition["min_score"] = new_min_score
+                    if new_required_tasks != current_required_tasks:
+                        unlock_condition["required_tasks"] = new_required_tasks
                     
                     task["unlock_condition"] = unlock_condition
                     
@@ -494,22 +618,178 @@ To use this package:
         else:
             st.info("Upload a project ZIP and generate testcases to configure tasks.")
             
-            # Simple task creation form
-            st.markdown("### Create Manual Task")
-        task_name = st.text_input("Task Name")
-        task_desc = st.text_area("Task Description")
-        requirements = st.text_area("Requirements (one per line)")
-        testcases = st.text_area("Test Cases (one per line)")
-
-        if st.button("Save Task"):
-            task = {
+            # Comprehensive Project Configuration Form
+            st.markdown("### Create Project Configuration")
+            
+            # Project metadata
+            col1, col2 = st.columns(2)
+            with col1:
+                project_name = st.text_input("Project Name", value="New Project")
+            with col2:
+                project_description = st.text_input("Project Description", value="Auto-generated progressive validation project")
+            
+            st.markdown("---")
+            st.markdown("#### Add Tasks")
+            
+            # Initialize session state for tasks
+            if 'tasks' not in st.session_state:
+                st.session_state.tasks = []
+            
+            # Task creation form
+            with st.expander("Add New Task", expanded=True):
+                task_name = st.text_input("Task Name", placeholder="e.g., Login Validation")
+                task_description = st.text_area("Task Description", placeholder="e.g., Auto-generated validation for login.html")
+                
+                col3, col4 = st.columns(2)
+                with col3:
+                    required_files = st.multiselect(
+                        "Required Files",
+                        options=[
+                            "app.py", "requirements.txt", "templates/base.html", 
+                            "templates/index.html", "templates/about.html", 
+                            "templates/contact.html", "templates/login.html",
+                            "templates/register.html", "templates/dashboard.html",
+                            "static/style.css", "static/script.js", "main.py", 
+                            "run.py", "config.py", "models.py", "views.py"
+                        ],
+                        default=["templates/login.html"]
+                    )
+                
+                with col4:
+                    file_type = st.selectbox("File Type", ["html", "py", "css", "js"])
+                    points = st.number_input("Points", min_value=1, max_value=50, value=10)
+                
+                # Playwright test configuration
+                st.markdown("**Playwright Test Configuration:**")
+                col5, col6 = st.columns(2)
+                with col5:
+                    route = st.text_input("Route", placeholder="/login")
+                with col6:
+                    playwright_points = st.number_input("Playwright Points", min_value=1, max_value=50, value=10)
+                
+                # Actions for playwright
+                st.markdown("**Actions:**")
+                action_type = st.selectbox("Action Type", ["click", "input", "navigate"])
+                
+                if action_type == "input":
+                    col7, col8 = st.columns(2)
+                    with col7:
+                        selector_type = st.selectbox("Selector Type", ["class", "id", "text"])
+                        selector_value = st.text_input("Selector Value", placeholder="form-control")
+                    with col8:
+                        input_variants = st.text_area("Input Variants (one per line)", 
+                                                   placeholder="test@example.com\ninvalid_email\nuser@domain")
+                elif action_type == "click":
+                    col7, col8 = st.columns(2)
+                    with col7:
+                        selector_type = st.selectbox("Selector Type", ["class", "id", "text"])
+                        selector_value = st.text_input("Selector Value", placeholder="btn-primary")
+                    with col8:
+                        st.write("Click action will be added")
+                
+                # Validation rules
+                st.markdown("**Validation Rules:**")
+                validation_texts = st.text_area("Validation Texts (one per line)", 
+                                               placeholder="Login successful\nInvalid credentials\nEmail is required")
+                
+                if st.button("Add Task", type="primary"):
+                    if task_name and required_files:
+                        # Create playwright actions
+                        actions = []
+                        if action_type == "input" and selector_value and input_variants:
+                            actions.append({
+                                "selector_type": selector_type,
+                                "selector_value": selector_value,
+                                "input_variants": [v.strip() for v in input_variants.split('\n') if v.strip()]
+                            })
+                        elif action_type == "click" and selector_value:
+                            actions.append({
+                                "selector_type": selector_type,
+                                "selector_value": selector_value,
+                                "click": True
+                            })
+                        
+                        # Create validation rules
+                        validate = [
+                            {"type": "text_present", "value": "successful"},
+                            {"type": "text_present", "value": "Registration successful"},
+                            {"type": "text_present", "value": "Login successful"}
+                        ]
+                        
+                        # Add custom validation texts
+                        for text in validation_texts.split('\n'):
+                            if text.strip():
+                                validate.append({"type": "text_present", "value": text.strip()})
+                        
+                        # Create task
+                        task_id = len(st.session_state.tasks) + 1
+                        new_task = {
+                            "id": task_id,
                 "name": task_name,
-                "description": task_desc,
-                "requirements": requirements.splitlines(),
-                "testcases": testcases.splitlines(),
-            }
-            st.success(f"Task '{task_name}' saved (prototype).")
-            st.write(task)
+                            "description": task_description,
+                            "required_files": required_files,
+                            "validation_rules": {
+                                "type": file_type,
+                                "file": required_files[0] if required_files else "",
+                                "points": points,
+                                "generatedTests": [],
+                                "analysis": {"elements": [], "selectors": []}
+                            },
+                            "playwright_test": {
+                                "route": route,
+                                "actions": actions,
+                                "validate": validate,
+                                "points": playwright_points
+                            },
+                            "unlock_condition": {"min_score": 0, "required_tasks": []}
+                        }
+                        
+                        st.session_state.tasks.append(new_task)
+                        st.success(f"Task '{task_name}' added!")
+                        st.rerun()
+                    else:
+                        st.error("Please provide task name and at least one required file.")
+            
+            # Display current tasks
+            if st.session_state.tasks:
+                st.markdown("---")
+                st.markdown("#### Current Tasks")
+                for i, task in enumerate(st.session_state.tasks):
+                    with st.expander(f"Task {task['id']}: {task['name']}", expanded=False):
+                        col9, col10 = st.columns([3, 1])
+                        with col9:
+                            st.write(f"**Description:** {task['description']}")
+                            st.write(f"**Required Files:** {', '.join(task['required_files'])}")
+                            st.write(f"**Route:** {task['playwright_test']['route']}")
+                            st.write(f"**Points:** {task['validation_rules']['points']} (validation) + {task['playwright_test']['points']} (playwright)")
+                        with col10:
+                            if st.button("Remove", key=f"remove_{i}"):
+                                st.session_state.tasks.pop(i)
+                                st.rerun()
+                
+                # Generate final JSON
+                st.markdown("---")
+                st.markdown("#### Generate Project Configuration")
+                
+                if st.button("Generate Project JSON", type="primary"):
+                    project_config = {
+                        "project": project_name,
+                        "description": project_description,
+                        "tasks": st.session_state.tasks
+                    }
+                    
+                    # Display the JSON
+                    st.success("Project configuration generated!")
+                    st.json(project_config)
+                    
+                    # Download button
+                    json_str = json.dumps(project_config, indent=2)
+                    st.download_button(
+                        label="Download Project Configuration",
+                        data=json_str,
+                        file_name="project_configuration.json",
+                        mime="application/json"
+                    )
 
 else:
     st.info("Please upload a project ZIP to begin.")

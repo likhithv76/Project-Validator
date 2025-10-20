@@ -1,3 +1,4 @@
+# Version: 2.1 - Fixed method signature and project-specific progress tracking
 import os
 import json
 import tempfile
@@ -337,6 +338,17 @@ class TaskValidator:
         """Execute Playwright test based on configuration."""
         try:
             from playwright.sync_api import sync_playwright
+            import asyncio
+            import sys
+            
+            # Handle Windows asyncio compatibility
+            if sys.platform == "win32":
+                try:
+                    # Try to set the event loop policy for Windows
+                    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+                except Exception:
+                    # If that fails, try the default policy
+                    pass
             
             with sync_playwright() as p:
                 browser = p.chromium.launch(headless=True)
@@ -420,18 +432,31 @@ class TaskValidator:
                     "message": "Playwright test completed successfully" if success else f"Playwright test failed: {'; '.join(errors)}"
                 }
                 
+        except NotImplementedError as e:
+            return {
+                "success": False,
+                "error": f"Playwright not supported on this platform: {str(e)}. Please ensure Playwright is properly installed with 'playwright install'.",
+                "score": 0,
+                "max_score": 0,
+                "screenshots": [],
+                "errors": [str(e)]
+            }
         except Exception as e:
             return {
                 "success": False,
                 "error": f"Playwright execution failed: {str(e)}",
                 "score": 0,
                 "max_score": 0,
-                "screenshots": []
+                "screenshots": [],
+                "errors": [str(e)]
             }
     
-    def get_student_progress(self, student_id: str) -> Dict:
-        """Get student's progress across all tasks."""
-        progress_file = self.logs_dir / student_id / "progress.json"
+    def get_student_progress(self, student_id: str, project_id: str = None) -> Dict:
+        """Get student's progress across all tasks for a specific project."""
+        if project_id:
+            progress_file = self.logs_dir / student_id / f"progress_{project_id}.json"
+        else:
+            progress_file = self.logs_dir / student_id / "progress.json"
         
         if progress_file.exists():
             try:
@@ -443,15 +468,16 @@ class TaskValidator:
         # Return default progress
         return {
             "student_id": student_id,
+            "project_id": project_id,
             "completed_tasks": [],
             "current_task": 1,
             "total_score": 0,
             "last_updated": datetime.now().isoformat()
         }
     
-    def update_student_progress(self, student_id: str, task_result: Dict):
-        """Update student's progress after task completion."""
-        progress = self.get_student_progress(student_id)
+    def update_student_progress(self, student_id: str, task_result: Dict, project_id: str = None):
+        """Update student's progress after task completion for a specific project."""
+        progress = self.get_student_progress(student_id, project_id)
         
         task_id = task_result["task_id"]
         task_passed = task_result["task_passed"]
@@ -471,8 +497,12 @@ class TaskValidator:
         
         progress["last_updated"] = datetime.now().isoformat()
         
-        # Save progress
-        progress_file = self.logs_dir / student_id / "progress.json"
+        # Save progress with project-specific filename
+        if project_id:
+            progress_file = self.logs_dir / student_id / f"progress_{project_id}.json"
+        else:
+            progress_file = self.logs_dir / student_id / "progress.json"
+        
         progress_file.parent.mkdir(parents=True, exist_ok=True)
         
         with open(progress_file, 'w', encoding='utf-8') as f:

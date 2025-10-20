@@ -2,6 +2,9 @@ import fs from "fs";
 import path from "path";
 import { TestcaseGenerator } from "./testcaseGenerator.js";
 
+// NOTE: This parser-based generator is disabled when TEST_CASE_GENERATOR_METHOD=AI
+// The Gemini AI generator in gemini_generator.py will be used instead
+
 /**
  * Generate Playwright actions and validation rules from HTML elements
  * @param {Array} elements - Parsed HTML elements from analysis

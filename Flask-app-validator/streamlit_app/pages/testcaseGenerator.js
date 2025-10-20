@@ -4,6 +4,9 @@ import { JSParser } from "./jsParser.js";
 import fs from "fs";
 import path from "path";
 
+// NOTE: This parser-based generator is used as fallback when TEST_CASE_GENERATOR_METHOD=PARSER
+// When TEST_CASE_GENERATOR_METHOD=AI, the Gemini AI generator will be used instead
+
 export class TestcaseGenerator {
   constructor() {
     this.htmlParser = new HTMLParser();
