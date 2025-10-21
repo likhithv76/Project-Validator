@@ -134,7 +134,7 @@ if not current_task:
 # Check if all tasks are completed
 all_tasks_completed = len(progress["completed_tasks"]) == len(all_tasks)
 if all_tasks_completed:
-    st.success("🎉 Congratulations! You have completed all tasks!")
+    st.success("Congratulations! You have completed all tasks!")
     st.info("Scroll down to see all completed tasks.")
     # Don't show current task section when all tasks are completed
     current_task = None
