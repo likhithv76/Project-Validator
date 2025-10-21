@@ -9,15 +9,13 @@ import sys
 # --- Setup paths ---
 project_root = Path(__file__).resolve().parents[2]
 validator_dir = project_root / "validator"
-projects_dir = project_root / "projects"  # <-- folder containing creator's JSON configs
+projects_dir = project_root / "projects"
 sys.path.insert(0, str(validator_dir))
 
 try:
-    # Clear module cache to ensure we get the latest version
     if 'task_validator' in sys.modules:
         del sys.modules['task_validator']
     
-    # Try importing TaskValidator
     from task_validator import TaskValidator
     
 except ImportError as e:
@@ -230,9 +228,9 @@ if current_task and not all_tasks_completed:
         if uploaded_file:
             st.success("File ready for validation.")
 
-        col_a, col_b = st.columns(2)
+        col_a, col_b, col_c = st.columns([1, 1, 1])
         with col_a:
-            if st.button("Validate", key=f"validate_{current_task['id']}"):
+            if st.button("Validate", key=f"validate_{current_task['id']}", help="Validate your current upload"):
                 if not uploaded_file:
                     st.warning("Please upload a ZIP first.")
                 else:
@@ -256,8 +254,15 @@ if current_task and not all_tasks_completed:
                             st.error(f"Validation failed: {error_msg}")
 
         with col_b:
-            if st.button("Submit", key=f"submit_{current_task['id']}"):
-                st.success("Task submitted successfully!")
+            if st.button("Submit", key=f"submit_{current_task['id']}", help="Submit your current upload"):
+                if not uploaded_file:
+                    st.warning("Please upload a ZIP first.")
+                else:
+                    st.success("Task submitted successfully!")
+
+        with col_c:
+            if st.button("Re-upload", key=f"reupload_{current_task['id']}", help="Upload a new ZIP file"):
+                st.rerun()
 
 st.divider()
 st.subheader("All Tasks")
@@ -312,6 +317,12 @@ for t in all_tasks:
                 st.markdown("### Verification Status")
                 st.success("Verified")
                 
+                # Add re-upload option for completed tasks
+                st.markdown("### Re-attempt Task")
+                if st.button("Re-upload & Validate", key=f"retry_{t['id']}", help="Upload a new version and validate again"):
+                    st.info("Please upload your updated project ZIP file below.")
+                    st.session_state[f"retry_task_{t['id']}"] = True
+                
                 task_logs_dir = Path("Logs") / student_id / f"task_{t['id']}"
                 if task_logs_dir.exists():
                     json_files = list(task_logs_dir.glob("*.json"))
@@ -328,7 +339,7 @@ for t in all_tasks:
                                     screenshot_path = Path(screenshot).resolve()
                                     if screenshot_path.exists():
                                         try:
-                                            screenshot_name = f"📸 Screenshot {i+1}"
+                                            screenshot_name = f"Screenshot {i+1}"
                                             
                                             st.markdown(f"**{screenshot_name}**")
                                             
@@ -420,3 +431,45 @@ for t in all_tasks:
                                 st.warning("Task validation had issues")
                         except:
                             pass
+
+        # Re-upload section for completed tasks
+        if is_completed and st.session_state.get(f"retry_task_{t['id']}", False):
+            st.markdown("---")
+            st.markdown("### Re-attempt This Task")
+            
+            retry_upload = st.file_uploader(
+                f"Upload updated ZIP for Task {t['id']}", 
+                type=["zip"], 
+                key=f"retry_upload_{t['id']}"
+            )
+            
+            if retry_upload:
+                st.success("Updated file ready for validation.")
+                
+                col_retry_a, col_retry_b = st.columns(2)
+                with col_retry_a:
+                    if st.button("Validate Update", key=f"validate_retry_{t['id']}"):
+                        with st.spinner("Validating your updated submission..."):
+                            tmp = tempfile.mktemp(suffix=".zip")
+                            with open(tmp, "wb") as f:
+                                f.write(retry_upload.getvalue())
+                            
+                            try:
+                                task_validator.load_project_config(str(selected_project_path))
+                            except Exception:
+                                pass
+                            
+                            result = task_validator.validate_task(t["id"], tmp, student_id)
+                            if result.get("success"):
+                                st.success(f"Updated validation completed! Score: {result['total_score']} / {result['max_score']}")
+                                task_validator.update_student_progress(student_id, result, project_id)
+                                st.session_state[f"retry_task_{t['id']}"] = False
+                                st.rerun()
+                            else:
+                                error_msg = result.get('message') or result.get('error') or 'Unknown error'
+                                st.error(f"Updated validation failed: {error_msg}")
+                
+                with col_retry_b:
+                    if st.button("Cancel", key=f"cancel_retry_{t['id']}"):
+                        st.session_state[f"retry_task_{t['id']}"] = False
+                        st.rerun()
