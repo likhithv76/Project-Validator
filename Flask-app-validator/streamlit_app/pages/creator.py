@@ -148,6 +148,13 @@ if uploaded_zip:
             # Tasks Editor
             for i, task in enumerate(project_data["tasks"]):
                 with st.expander(f"Task {task['id']}: {task['name']}", expanded=False):
+                    # Add delete button at the top of each task
+                    col_task_header, col_delete = st.columns([4, 1])
+                    with col_delete:
+                        if st.button("🗑️ Delete", key=f"delete_task_{i}", help="Delete this task"):
+                            project_data["tasks"].pop(i)
+                            st.session_state.generated_json = project_data
+                            st.rerun()
                     # Basic task info
                     new_name = st.text_input(f"Task Name", value=task["name"], key=f"task_name_{i}")
                     new_description = st.text_area(f"Description", value=task["description"], key=f"task_desc_{i}")
@@ -764,7 +771,7 @@ To use this package:
                             st.write(f"**Route:** {task['playwright_test']['route']}")
                             st.write(f"**Points:** {task['validation_rules']['points']} (validation) + {task['playwright_test']['points']} (UI test)")
                         with col10:
-                            if st.button("Remove", key=f"remove_{i}"):
+                            if st.button("Remove", key=f"remove_{i}", help="Delete this task"):
                                 st.session_state.tasks.pop(i)
                                 st.rerun()
                 

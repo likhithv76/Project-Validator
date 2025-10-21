@@ -205,7 +205,14 @@ if current_task and not all_tasks_completed:
         must_have_content = validation.get("mustHaveContent", [])
 
         if must_have_elements:
-            st.write(f"- Elements: {', '.join(must_have_elements)}")
+            # Handle case where elements might be dicts or strings
+            element_strings = []
+            for elem in must_have_elements:
+                if isinstance(elem, dict):
+                    element_strings.append(f"{elem.get('tag', 'unknown')} - {elem.get('class', 'no class')}")
+                else:
+                    element_strings.append(str(elem))
+            st.write(f"- Elements: {', '.join(element_strings)}")
         if must_have_classes:
             class_strings = []
             for cls in must_have_classes:
@@ -215,9 +222,23 @@ if current_task and not all_tasks_completed:
                     class_strings.append(str(cls))
             st.write(f"- Classes: {', '.join(class_strings)}")
         if must_have_inputs:
-            st.write(f"- Inputs: {', '.join(must_have_inputs)}")
+            # Handle case where inputs might be dicts or strings
+            input_strings = []
+            for inp in must_have_inputs:
+                if isinstance(inp, dict):
+                    input_strings.append(f"{inp.get('type', 'unknown')} - {inp.get('name', 'no name')}")
+                else:
+                    input_strings.append(str(inp))
+            st.write(f"- Inputs: {', '.join(input_strings)}")
         if must_have_content:
-            st.write(f"- Content: {', '.join(must_have_content)}")
+            # Handle case where content might be dicts or strings
+            content_strings = []
+            for content in must_have_content:
+                if isinstance(content, dict):
+                    content_strings.append(f"{content.get('text', 'no text')} - {content.get('selector', 'no selector')}")
+                else:
+                    content_strings.append(str(content))
+            st.write(f"- Content: {', '.join(content_strings)}")
 
         st.info(f"Total Points: {validation.get('points', 0)}")
 
