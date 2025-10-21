@@ -59,7 +59,7 @@ if not project_files:
     st.stop()
 
 # Create mapping for dropdown
-project_names = [p.stem.replace("_", " ").title() for p in project_files]
+project_names = [p.stem.replace("_configuration", "").replace("_", " ").title() for p in project_files]
 project_map = dict(zip(project_names, project_files))
 
 # --- Project selection ---
@@ -133,8 +133,16 @@ if not current_task:
     else:
         current_task = all_tasks[0]
 
+# Check if all tasks are completed
+all_tasks_completed = len(progress["completed_tasks"]) == len(all_tasks)
+if all_tasks_completed:
+    st.success("🎉 Congratulations! You have completed all tasks!")
+    st.info("Scroll down to see all completed tasks.")
+    # Don't show current task section when all tasks are completed
+    current_task = None
+
 # --- Current Task UI ---
-if current_task:
+if current_task and not all_tasks_completed:
     col_left, col_right = st.columns([1, 1.1])
 
     with col_left:
@@ -190,7 +198,6 @@ if current_task:
         st.markdown("**Requirements:**")
         validation = current_task.get("validation_rules", {})
         
-        # Ensure validation is a dictionary, not a list
         if isinstance(validation, list):
             validation = {}
         
@@ -202,7 +209,13 @@ if current_task:
         if must_have_elements:
             st.write(f"- Elements: {', '.join(must_have_elements)}")
         if must_have_classes:
-            st.write(f"- Classes: {', '.join(must_have_classes)}")
+            class_strings = []
+            for cls in must_have_classes:
+                if isinstance(cls, dict):
+                    class_strings.append(f"{cls.get('element', '')}.{cls.get('class', '')}")
+                else:
+                    class_strings.append(str(cls))
+            st.write(f"- Classes: {', '.join(class_strings)}")
         if must_have_inputs:
             st.write(f"- Inputs: {', '.join(must_have_inputs)}")
         if must_have_content:
@@ -228,7 +241,6 @@ if current_task:
                         with open(tmp, "wb") as f:
                             f.write(uploaded_file.getvalue())
                         
-                        # Always reload the selected project configuration before validating
                         try:
                             task_validator.load_project_config(str(selected_project_path))
                         except Exception:
@@ -240,7 +252,6 @@ if current_task:
                             task_validator.update_student_progress(student_id, result, project_id)
                             st.rerun()
                         else:
-                            # Show detailed error message if available
                             error_msg = result.get('message') or result.get('error') or 'Unknown error'
                             st.error(f"Validation failed: {error_msg}")
 
@@ -251,17 +262,14 @@ if current_task:
 st.divider()
 st.subheader("All Tasks")
 
-# --- Display all tasks below ---
 for t in all_tasks:
     if t == current_task:
         continue
     
-    # Check if task is completed
     is_completed = t["id"] in progress["completed_tasks"]
     task_status = "Completed" if is_completed else "Pending"
     
     with st.expander(f"Task {t['id']}: {t['name']} - {task_status}"):
-        # Task status and verification info
         col_status, col_verify = st.columns([0.7, 0.3])
         
         with col_status:
@@ -273,7 +281,6 @@ for t in all_tasks:
             
             if is_completed:
                 st.success("Task completed successfully!")
-                # Show completion details if available
                 task_logs_dir = Path("Logs") / student_id / f"task_{t['id']}"
                 if task_logs_dir.exists():
                     json_files = list(task_logs_dir.glob("*.json"))
@@ -284,7 +291,6 @@ for t in all_tasks:
                                 result_data = json.load(f)
                             st.write(f"**Last Score:** {result_data.get('total_score', 0)} / {result_data.get('max_score', 0)}")
                             
-                            # Show validation details
                             static_val = result_data.get('static_validation', {})
                             playwright_val = result_data.get('playwright_validation', {})
                             
@@ -294,7 +300,6 @@ for t in all_tasks:
                                 task_name = t.get('name', f'Task {t.get("id", "?")}')
                                 st.write(f"{task_name} passed")
                             elif playwright_val.get('message'):
-                                # Extract the actual error from the message
                                 error_msg = playwright_val['message']
                                 if "UI test failed:" in error_msg:
                                     error_msg = error_msg.replace("UI test failed: ", "")
@@ -307,7 +312,6 @@ for t in all_tasks:
                 st.markdown("### Verification Status")
                 st.success("Verified")
                 
-                # Show verification details
                 task_logs_dir = Path("Logs") / student_id / f"task_{t['id']}"
                 if task_logs_dir.exists():
                     json_files = list(task_logs_dir.glob("*.json"))
@@ -317,7 +321,6 @@ for t in all_tasks:
                             with open(latest_result, 'r', encoding='utf-8') as f:
                                 result_data = json.load(f)
                             
-                            # Show screenshots if available
                             screenshots = result_data.get('screenshots', [])
                             if screenshots:
                                 st.write("Screenshots captured:")
@@ -325,7 +328,23 @@ for t in all_tasks:
                                     screenshot_path = Path(screenshot).resolve()
                                     if screenshot_path.exists():
                                         try:
-                                            st.image(str(screenshot_path), caption=f"Screenshot {i+1}", width=600)
+                                            screenshot_name = f"📸 Screenshot {i+1}"
+                                            
+                                            st.markdown(f"**{screenshot_name}**")
+                                            
+                                            with open(screenshot_path, "rb") as img_file:
+                                                img_data = img_file.read()
+                                            
+                                            st.image(img_data, caption=f"Click to view full size", width='stretch')
+                                            
+                                            st.download_button(
+                                                label="📥 Download Image",
+                                                data=img_data,
+                                                file_name=screenshot_path.name,
+                                                mime="image/png",
+                                                key=f"download_{i}"
+                                            )
+                                            st.caption(f"File: {screenshot_path.name}")
                                         except Exception as e:
                                             st.write(f"Could not display screenshot {i+1}: {str(e)}")
                                     else:
@@ -355,7 +374,16 @@ for t in all_tasks:
             if "mustHaveElements" in rules:
                 st.write(f"Elements: {', '.join(rules['mustHaveElements'])}")
             if "mustHaveClasses" in rules:
-                st.write(f"Classes: {', '.join(rules['mustHaveClasses'])}")
+                classes = rules['mustHaveClasses']
+                if isinstance(classes, list) and classes:
+                    # Handle both string and dict formats
+                    class_strings = []
+                    for cls in classes:
+                        if isinstance(cls, dict):
+                            class_strings.append(f"{cls.get('element', '')}.{cls.get('class', '')}")
+                        else:
+                            class_strings.append(str(cls))
+                    st.write(f"Classes: {', '.join(class_strings)}")
             if "mustHaveInputs" in rules:
                 st.write(f"Inputs: {', '.join(rules['mustHaveInputs'])}")
             if "mustHaveContent" in rules:

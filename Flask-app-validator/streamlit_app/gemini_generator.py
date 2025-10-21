@@ -184,12 +184,20 @@ requirements.txt
      - "Ensure the home page loads correctly"
      - "Check that all required fields are present"
 
-4. **Scoring Constraints**
-   - Total project score should roughly fall between 70–100.
-   - Static validations (HTML/CSS) contribute 40–60%.
-   - UI test (dynamic) validations contribute 40–60%.
-   - Each task's `points` field should reflect its individual difficulty.
-   - Avoid duplicate or identical scoring.
+4. **Scoring Constraints (CRITICAL)**
+   - **Total project score**: 70–100 points across all tasks
+   - **Static validations**: 40–60% of total points
+   - **UI test validations**: 40–60% of total points
+   - **Each task's points**: Reflect individual difficulty (5-25 points per task)
+   - **Unlock conditions**: `min_score` represents CUMULATIVE score from previous tasks
+   - **Progressive unlocking**: 
+     - Task 1: `min_score: 0` (no prerequisites)
+     - Task 2: `min_score: 5-10` (cumulative from Task 1)
+     - Task 3: `min_score: 10-20` (cumulative from Tasks 1+2)
+     - Task 4: `min_score: 15-30` (cumulative from Tasks 1+2+3)
+     - Task 5: `min_score: 20-40` (cumulative from Tasks 1+2+3+4)
+   - **CRITICAL**: `min_score` = cumulative points needed from PREVIOUS tasks, NOT current task points!
+   - **Example**: If Task 1=10pts, Task 2=15pts, then Task 3 needs `min_score: 10-20` (from Tasks 1+2)
 
 5. **UI Test Rules (STRICT)**
    - Use simple selectors only:
@@ -308,10 +316,13 @@ requirements.txt
    - Ensure JSON is syntactically valid.
    - **REMEMBER**: All task descriptions must be instructions for students, NOT validation descriptions!
    - **CRITICAL ERROR TO AVOID**: Never use `"checks"` array with `"type": "html"` - this causes validation errors!
-     - ❌ Wrong: `{"type": "html", "checks": ["file exists"]}`
-     - ✅ Correct: `{"type": "structure", "checks": ["file exists"]}` OR `{"type": "html", "file": "path.html", "mustHaveElements": [...]}`
+     - Wrong: `{"type": "html", "checks": ["file exists"]}`
+     - Correct: `{"type": "structure", "checks": ["file exists"]}` OR `{"type": "html", "file": "path.html", "mustHaveElements": [...]}`
    - **NEVER create empty validation rules**: `"validation_rules": {}` will cause "Unknown rule type" errors
    - **Every task MUST have proper validation rules** - use structure for file checks, html for content validation
+   - **SCORING IS CRITICAL**: Ensure `min_score` ≤ total possible points for each task!
+     - Wrong: Task with 20 points but `min_score: 50`
+     - Correct: Task with 20 points and `min_score: 10-15`
 """
         return prompt
 
@@ -396,12 +407,40 @@ requirements.txt
                     ui_points = ui_test.get("points", 0) if isinstance(ui_test, dict) else 0
                     total_possible_points = validation_points + ui_points
                     
-                    # If min_score is higher than total possible points, fix it
-                    if min_score > total_possible_points and total_possible_points > 0:
-                        # Set min_score to 70% of total possible points (reasonable threshold)
-                        new_min_score = max(1, int(total_possible_points * 0.7))
-                        unlock_condition["min_score"] = new_min_score
-                        print(f"[GeminiTestCaseGenerator] Fixed task {task.get('id', '?')}: Adjusted min_score from {min_score} to {new_min_score} (total possible: {total_possible_points})")
+                    # Calculate reasonable min_score based on task progression
+                    task_id = task.get("id", 1)
+                    if task_id == 1:
+                        # Task 1: No prerequisites
+                        reasonable_min_score = 0
+                    elif task_id == 2:
+                        # Task 2: After Task 1 (5-10 points)
+                        reasonable_min_score = min(10, max(5, int(total_possible_points * 0.3)))
+                    elif task_id == 3:
+                        # Task 3: After Task 2 (10-20 points)
+                        reasonable_min_score = min(20, max(10, int(total_possible_points * 0.4)))
+                    elif task_id == 4:
+                        # Task 4: After Task 3 (15-30 points)
+                        reasonable_min_score = min(30, max(15, int(total_possible_points * 0.5)))
+                    else:
+                        # Task 5+: After previous tasks (20-40 points)
+                        reasonable_min_score = min(40, max(20, int(total_possible_points * 0.6)))
+                    
+                    # Ensure min_score doesn't exceed total possible points
+                    reasonable_min_score = min(reasonable_min_score, total_possible_points)
+                    
+                    # If min_score is unrealistic, fix it
+                    if min_score > total_possible_points or min_score > reasonable_min_score * 1.5:
+                        unlock_condition["min_score"] = reasonable_min_score
+                        print(f"[GeminiTestCaseGenerator] Fixed task {task_id}: Adjusted min_score from {min_score} to {reasonable_min_score} (total possible: {total_possible_points})")
+                    
+                    # Also fix points if they seem unrealistic
+                    if total_possible_points > 50:  # Single task shouldn't have more than 50 points
+                        if isinstance(validation_rules, dict) and validation_rules.get("points", 0) > 25:
+                            validation_rules["points"] = 25
+                            print(f"[GeminiTestCaseGenerator] Fixed task {task_id}: Reduced validation points to 25")
+                        if isinstance(ui_test, dict) and ui_test.get("points", 0) > 25:
+                            ui_test["points"] = 25
+                            print(f"[GeminiTestCaseGenerator] Fixed task {task_id}: Reduced UI test points to 25")
             
             return parsed
         except json.JSONDecodeError as e:
