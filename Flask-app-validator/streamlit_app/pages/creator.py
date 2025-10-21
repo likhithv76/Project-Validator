@@ -3,8 +3,242 @@ import subprocess
 import tempfile, zipfile, os, json
 from pathlib import Path
 import sys
+import requests
+import asyncio
+import threading
+import time
 sys.path.append(str(Path(__file__).parent.parent))
 from gemini_generator import GeminiTestCaseGenerator
+
+# Helper functions for Playwright preview
+def check_playwright_backend():
+    """Check if Playwright backend is running."""
+    try:
+        response = requests.get("http://127.0.0.1:8001/health", timeout=2)
+        return response.status_code == 200
+    except:
+        return False
+
+def run_task_preview(project_data, tmp_dir):
+    """Run Playwright tests on all tasks."""
+    try:
+        # Start Flask app in background
+        flask_process = start_flask_app(tmp_dir)
+        time.sleep(3)  # Wait for Flask to start
+        
+        # Run tests for each task
+        results = []
+        for task in project_data.get("tasks", []):
+            task_result = run_single_task_test(task, tmp_dir)
+            results.append(task_result)
+        
+        # Stop Flask app
+        if flask_process:
+            flask_process.terminate()
+        
+        return results
+    except Exception as e:
+        st.error(f"Preview failed: {str(e)}")
+        return []
+
+def start_flask_app(tmp_dir):
+    """Start Flask app in background."""
+    try:
+        # Find app.py in the extracted project
+        app_py = os.path.join(tmp_dir, "app.py")
+        if not os.path.exists(app_py):
+            # Look for other Python files
+            for file in os.listdir(tmp_dir):
+                if file.endswith('.py') and file != '__init__.py':
+                    app_py = os.path.join(tmp_dir, file)
+                    break
+        
+        if os.path.exists(app_py):
+            # Start Flask app
+            process = subprocess.Popen([
+                sys.executable, app_py
+            ], cwd=tmp_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            return process
+    except Exception as e:
+        st.error(f"Failed to start Flask app: {e}")
+    return None
+
+def run_single_task_test(task, tmp_dir):
+    """Run Playwright test for a single task."""
+    try:
+        playwright_test = task.get("playwright_test", {})
+        route = playwright_test.get("route", "")
+        
+        if not route:
+            return {
+                "task_id": task["id"],
+                "task_name": task["name"],
+                "status": "SKIP",
+                "message": "No route configured",
+                "screenshot": None
+            }
+        
+        # Prepare test data
+        test_data = {
+            "base_url": "http://127.0.0.1:5000",
+            "test_suite": "custom",
+            "project_name": f"task_{task['id']}",
+            "timeout": 30,
+            "headless": True,
+            "capture_screenshots": True,
+            "task_config": {
+                "task_id": task["id"],
+                "route": route,
+                "actions": playwright_test.get("actions", []),
+                "validate": playwright_test.get("validate", [])
+            }
+        }
+        
+        # Call Playwright backend
+        response = requests.post(
+            "http://127.0.0.1:8001/run-custom-task-test",
+            json=test_data,
+            timeout=60
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            return {
+                "task_id": task["id"],
+                "task_name": task["name"],
+                "status": "PASS" if result["failed_tests"] == 0 else "FAIL",
+                "message": f"Tests: {result['passed_tests']}/{result['total_tests']} passed",
+                "screenshot": result["screenshots"][0] if result["screenshots"] else None,
+                "details": result
+            }
+        else:
+            return {
+                "task_id": task["id"],
+                "task_name": task["name"],
+                "status": "ERROR",
+                "message": f"Backend error: {response.status_code}",
+                "screenshot": None
+            }
+            
+    except Exception as e:
+        return {
+            "task_id": task["id"],
+            "task_name": task["name"],
+            "status": "ERROR",
+            "message": str(e),
+            "screenshot": None
+        }
+
+def capture_reference_screenshots(project_data, tmp_dir):
+    """Capture reference screenshots for all tasks."""
+    try:
+        # Start Flask app
+        flask_process = start_flask_app(tmp_dir)
+        time.sleep(3)
+        
+        screenshots = []
+        for task in project_data.get("tasks", []):
+            playwright_test = task.get("playwright_test", {})
+            route = playwright_test.get("route", "")
+            
+            if route:
+                screenshot = capture_task_screenshot(task, route)
+                if screenshot:
+                    screenshots.append({
+                        "task_id": task["id"],
+                        "task_name": task["name"],
+                        "route": route,
+                        "screenshot": screenshot
+                    })
+        
+        # Stop Flask app
+        if flask_process:
+            flask_process.terminate()
+        
+        return screenshots
+    except Exception as e:
+        st.error(f"Screenshot capture failed: {str(e)}")
+        return []
+
+def capture_task_screenshot(task, route):
+    """Capture screenshot for a single task."""
+    try:
+        # Use Playwright to capture screenshot
+        test_data = {
+            "base_url": "http://127.0.0.1:5000",
+            "test_suite": "screenshot",
+            "project_name": f"ref_task_{task['id']}",
+            "timeout": 30,
+            "headless": True,
+            "capture_screenshots": True,
+            "task_config": {
+                "task_id": task["id"],
+                "screenshot_only": True,
+                "route": route,
+                "actions": task.get("playwright_test", {}).get("actions", []),
+                "validate": []
+            }
+        }
+        
+        response = requests.post(
+            "http://127.0.0.1:8001/run-custom-task-test",
+            json=test_data,
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            return result["screenshots"][0] if result["screenshots"] else None
+    except Exception as e:
+        st.error(f"Screenshot failed for task {task['id']}: {e}")
+    return None
+
+def display_preview_results(results):
+    """Display Playwright test results."""
+    st.markdown("#### Preview Results")
+    
+    for result in results:
+        col_status, col_info, col_screenshot = st.columns([1, 3, 2])
+        
+        with col_status:
+            if result["status"] == "PASS":
+                st.success("✅ PASS")
+            elif result["status"] == "FAIL":
+                st.error("❌ FAIL")
+            elif result["status"] == "SKIP":
+                st.warning("⏭️ SKIP")
+            else:
+                st.error("💥 ERROR")
+        
+        with col_info:
+            st.write(f"**Task {result['task_id']}:** {result['task_name']}")
+            st.write(f"*{result['message']}*")
+        
+        with col_screenshot:
+            if result["screenshot"]:
+                # Display screenshot if available
+                try:
+                    # This would need to be implemented based on how screenshots are stored
+                    st.write("📸 Screenshot available")
+                except:
+                    st.write("📸 Screenshot captured")
+
+def display_reference_screenshots(screenshots):
+    """Display reference screenshots."""
+    st.markdown("#### Reference Screenshots")
+    
+    for screenshot_info in screenshots:
+        with st.expander(f"Task {screenshot_info['task_id']}: {screenshot_info['task_name']} ({screenshot_info['route']})"):
+            if screenshot_info["screenshot"]:
+                st.write("📸 Reference screenshot captured")
+                # Display screenshot if available
+                try:
+                    # This would need to be implemented based on how screenshots are stored
+                    st.write("Screenshot data available")
+                except:
+                    st.write("Screenshot captured successfully")
+            else:
+                st.warning("No screenshot captured")
 
 st.set_page_config(page_title="Creator Portal", layout="wide")
 
@@ -483,6 +717,41 @@ if uploaded_zip:
                     task["unlock_condition"] = unlock_condition
                     
                     st.divider()
+            
+            # Task Preview and Validation Section
+            st.markdown("---")
+            st.markdown("### Task Preview & Validation")
+            st.info("🚀 Test your tasks with Playwright to ensure they work correctly before saving!")
+            
+            # Check if Playwright backend is available
+            playwright_available = check_playwright_backend()
+            
+            if playwright_available:
+                col_preview, col_validation = st.columns([1, 1])
+                
+                with col_preview:
+                    if st.button("🔍 Preview All Tasks", use_container_width=True, type="primary"):
+                        with st.spinner("Running Playwright tests..."):
+                            results = run_task_preview(project_data, tmp_dir)
+                            st.session_state.preview_results = results
+                
+                with col_validation:
+                    if st.button("📸 Capture Reference Screenshots", use_container_width=True):
+                        with st.spinner("Capturing reference screenshots..."):
+                            screenshots = capture_reference_screenshots(project_data, tmp_dir)
+                            st.session_state.reference_screenshots = screenshots
+                            st.success(f"Captured {len(screenshots)} reference screenshots!")
+                
+                # Display preview results
+                if hasattr(st.session_state, 'preview_results') and st.session_state.preview_results:
+                    display_preview_results(st.session_state.preview_results)
+                
+                # Display reference screenshots
+                if hasattr(st.session_state, 'reference_screenshots') and st.session_state.reference_screenshots:
+                    display_reference_screenshots(st.session_state.reference_screenshots)
+            else:
+                st.warning("⚠️ Playwright backend not available. Start the backend server to enable task preview.")
+                st.code("python playwright_backend/start_server.py", language="bash")
             
             # Add new task button
             st.markdown("### Add New Task")

@@ -26,6 +26,90 @@ class PlaywrightTestRunner:
             self.log(f"Failed to initialize Playwright: {e}", level="ERROR")
             raise
     
+    async def run_custom_task_test(
+        self,
+        base_url: str,
+        task_config: dict,
+        project_name: str = "custom_task",
+        timeout: int = 30,
+        headless: bool = True,
+        capture_screenshots: bool = True
+    ) -> List[Dict]:
+        """
+        Run a custom task test based on provided configuration.
+        
+        Args:
+            base_url: Base URL of the Flask application
+            task_config: Task configuration with route, actions, and validation rules
+            project_name: Name of the project being tested
+            timeout: Test timeout in seconds
+            headless: Run browser in headless mode
+            capture_screenshots: Capture screenshots on failures
+            
+        Returns:
+            List of test results
+        """
+        start_time = time.time()
+        results = []
+        
+        try:
+            project_results_dir = self.results_dir / project_name
+            project_results_dir.mkdir(parents=True, exist_ok=True)
+            
+            await self._launch_browser(headless=headless)
+            
+            # Import custom task test
+            from tests.test_custom_task import test_custom_task, test_screenshot_capture
+            
+            # Run the custom task test
+            page = await self.context.new_page()
+            
+            if task_config.get("screenshot_only", False):
+                # Just capture screenshot
+                result = await test_screenshot_capture(page, base_url, task_config)
+            else:
+                # Run full test
+                result = await test_custom_task(page, base_url, task_config)
+            
+            await page.close()
+            
+            # Format result
+            test_result = {
+                "name": f"Task {task_config.get('task_id', 'Unknown')}",
+                "status": result.get("status", "UNKNOWN"),
+                "duration": time.time() - start_time,
+                "error": result.get("error"),
+                "screenshot": result.get("screenshot"),
+                "validation_results": result.get("validation_results", [])
+            }
+            
+            results.append(test_result)
+            
+            # Save screenshots if captured
+            if capture_screenshots and result.get("screenshots"):
+                for i, screenshot in enumerate(result["screenshots"]):
+                    if screenshot and os.path.exists(screenshot):
+                        # Move screenshot to results directory
+                        new_path = project_results_dir / f"screenshot_{i}.png"
+                        os.rename(screenshot, new_path)
+                        test_result[f"screenshot_{i}"] = str(new_path)
+            
+            await self._save_results(project_results_dir, results, start_time)
+            
+        except Exception as e:
+            self.log(f"Error during custom task test execution: {e}", level="ERROR")
+            results.append({
+                "name": f"Task {task_config.get('task_id', 'Unknown')}",
+                "status": "FAIL",
+                "duration": time.time() - start_time,
+                "error": str(e)
+            })
+        
+        finally:
+            await self._cleanup()
+        
+        return results
+
     async def run_tests(
         self,
         base_url: str,

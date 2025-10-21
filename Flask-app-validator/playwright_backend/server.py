@@ -28,6 +28,7 @@ class TestRequest(BaseModel):
     timeout: int = 30
     headless: bool = True
     capture_screenshots: bool = True
+    task_config: Optional[Dict] = None
 
 class TestResult(BaseModel):
     name: str
@@ -53,6 +54,61 @@ async def health_check():
         "timestamp": datetime.utcnow().isoformat() + "Z",
         "playwright_available": test_runner is not None
     }
+
+@app.post("/run-custom-task-test", response_model=TestResponse)
+async def run_custom_task_test(request: TestRequest):
+    global test_runner
+    
+    start_time = time.time()
+    try:
+        if test_runner is None:
+            test_runner = PlaywrightTestRunner()
+            await test_runner.initialize()
+        
+        # Extract task config from request
+        task_config = getattr(request, 'task_config', {})
+        
+        results = await test_runner.run_custom_task_test(
+            base_url=request.base_url,
+            task_config=task_config,
+            project_name=request.project_name,
+            timeout=request.timeout,
+            headless=request.headless,
+            capture_screenshots=request.capture_screenshots
+        )
+        
+        execution_time = time.time() - start_time
+        
+        total_tests = len(results)
+        passed_tests = sum(1 for r in results if r["status"] == "PASS")
+        failed_tests = sum(1 for r in results if r["status"] == "FAIL")
+        
+        screenshots = [r.get("screenshot", "") for r in results if r.get("screenshot")]
+        logs = test_runner.get_logs()
+        
+        return TestResponse(
+            status="completed",
+            results=[TestResult(**r) for r in results],
+            screenshots=screenshots,
+            logs=logs,
+            total_tests=total_tests,
+            passed_tests=passed_tests,
+            failed_tests=failed_tests,
+            execution_time=execution_time
+        )
+        
+    except Exception as e:
+        execution_time = time.time() - start_time
+        return TestResponse(
+            status="failed",
+            results=[],
+            screenshots=[],
+            logs=[f"Error: {str(e)}"],
+            total_tests=0,
+            passed_tests=0,
+            failed_tests=0,
+            execution_time=execution_time
+        )
 
 @app.post("/run-ui-tests", response_model=TestResponse)
 async def run_ui_tests(request: TestRequest):
