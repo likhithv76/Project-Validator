@@ -1,4 +1,3 @@
-# Version: 2.1 - Fixed method signature and project-specific progress tracking
 import os
 import json
 import tempfile
@@ -30,6 +29,31 @@ class TaskValidator:
         self.tasks_file = self.project_root / "streamlit_app" / "rules" / "tasks.json"
         self.logs_dir = self.project_root / "Logs"
         self.tasks_config = self._load_tasks_config()
+    
+    # ----- Configuration injection -----
+    def load_project_config(self, config_or_path) -> None:
+        """Override tasks configuration at runtime with a dict or a JSON file path.
+        Useful for Student UI to use the selected project's JSON instead of default tasks.json.
+        """
+        try:
+            if isinstance(config_or_path, (str, os.PathLike)):
+                p = Path(config_or_path)
+                with open(p, 'r', encoding='utf-8') as f:
+                    self.tasks_config = json.load(f)
+            elif isinstance(config_or_path, dict):
+                self.tasks_config = config_or_path
+            else:
+                raise ValueError("config_or_path must be a dict or path to JSON")
+        except Exception as e:
+            # Fall back to existing config on error
+            print(f"Error loading provided project config: {e}")
+    
+    def set_tasks(self, tasks_list) -> None:
+        """Directly replace tasks in current config."""
+        base = self.tasks_config if isinstance(self.tasks_config, dict) else {}
+        base.setdefault("project", "Unknown")
+        base["tasks"] = list(tasks_list or [])
+        self.tasks_config = base
         
     def _load_tasks_config(self) -> Dict:
         """Load tasks configuration from JSON file."""
@@ -105,6 +129,22 @@ class TaskValidator:
             static_success = static_results.get("success", False)
             task_passed = static_success and total_score >= min_score
             
+            # Compile detailed error messages
+            error_messages = []
+            if not static_results.get("success", False):
+                error_messages.extend(static_results.get("error_details", []))
+            if not playwright_results.get("success", False):
+                if playwright_results.get("message"):
+                    error_messages.append(playwright_results["message"])
+            
+            # Create comprehensive error message
+            if error_messages:
+                detailed_message = "Validation failed: " + "; ".join(error_messages)
+            elif task_passed:
+                detailed_message = "Validation completed successfully"
+            else:
+                detailed_message = f"Validation failed: Score {total_score}/{max_score} below required {min_score}"
+            
             # Compile results
             results = {
                 "success": task_passed,
@@ -121,6 +161,8 @@ class TaskValidator:
                 "log_file": str(log_file),
                 "json_file": str(json_file),
                 "screenshots": playwright_results.get("screenshots", []),
+                "message": detailed_message,
+                "error_details": error_messages,
                 "error": None  # Add explicit error field
             }
             
@@ -153,9 +195,16 @@ class TaskValidator:
     def _run_static_validation(self, task: Dict, project_path: str, log_file: Path) -> Dict:
         """Run static validation using FlexibleFlaskValidator."""
         try:
+            # Handle both single rule and multiple rules
+            validation_rules = task["validation_rules"]
+            if isinstance(validation_rules, list):
+                rules_list = validation_rules
+            else:
+                rules_list = [validation_rules]
+            
             # Create a temporary rules file for this specific task
             task_rules = {
-                "rules": [task["validation_rules"]],
+                "rules": rules_list,
                 "ui_tests": []
             }
             
@@ -166,11 +215,9 @@ class TaskValidator:
             # Run validation
             validator = FlexibleFlaskValidator(project_path, rules_file=str(temp_rules_file))
             
-            # Override log file path
             validator.log_file = log_file
             validator.json_file = log_file.parent / f"{log_file.stem}.json"
             
-            # Run only the JSON rules (skip runtime checks for static validation)
             validator.execute_json_rules()
             
             # Calculate score
@@ -179,11 +226,22 @@ class TaskValidator:
             score = sum(result.get("points", 0) for result in validator.validation_results if result.get("passed", False))
             max_score = sum(result.get("points", 0) for result in validator.validation_results)
             
-            # Clean up temp rules file
             try:
                 temp_rules_file.unlink()
             except Exception:
                 pass
+            
+            # Extract detailed error messages from validation results
+            error_messages = []
+            for result in validator.validation_results:
+                if not result.get("passed", False) and result.get("message"):
+                    error_messages.append(result["message"])
+            
+            # Create a comprehensive error message
+            if error_messages:
+                detailed_message = "Validation failed: " + "; ".join(error_messages)
+            else:
+                detailed_message = "Validation completed"
             
             return {
                 "success": len(validator.errors) == 0,
@@ -193,7 +251,9 @@ class TaskValidator:
                 "total_checks": total_checks,
                 "errors": validator.errors,
                 "warnings": validator.warnings,
-                "validation_results": validator.validation_results
+                "validation_results": validator.validation_results,
+                "message": detailed_message,
+                "error_details": error_messages
             }
             
         except Exception as e:
@@ -351,42 +411,126 @@ class TaskValidator:
                     pass
             
             with sync_playwright() as p:
-                browser = p.chromium.launch(headless=True)
-                page = browser.new_page()
+                browser = p.chromium.launch(
+                    headless=True,
+                    args=[
+                        '--force-device-scale-factor=2',  # Higher DPI for crisp screenshots
+                        '--disable-web-security',
+                        '--disable-features=VizDisplayCompositor'
+                    ]
+                )
+                page = browser.new_page(
+                    viewport={'width': 1920, 'height': 1080},  # High resolution viewport
+                    device_scale_factor=2  # 2x scaling for better quality
+                )
                 
-                # Navigate to test URL
-                page.goto(test_url)
+                # Navigate to test URL and keep initial response
+                print(f"[Playwright] Navigating to: {test_url}")
+                nav_response = page.goto(test_url)
+                print(f"[Playwright] Navigation response: {nav_response.status if nav_response else 'No response'}")
+                
+                # Wait for page to be fully loaded for better screenshots
+                page.wait_for_load_state('networkidle')
+                page.wait_for_timeout(1000)  # Additional wait for any animations
                 
                 screenshots = []
                 score = 0
+                
+                # Take initial screenshot to verify navigation
+                initial_screenshot = screenshots_dir / "initial.png"
+                page.screenshot(path=str(initial_screenshot), full_page=True, type='png')
+                screenshots.append(str(initial_screenshot))
+                print(f"[Playwright] Initial screenshot saved: {initial_screenshot}")
                 max_score = config.get("points", 0)
                 errors = []
                 
                 # Execute actions
                 actions = config.get("actions", [])
+                print(f"[Playwright] Executing {len(actions)} actions")
                 for i, action in enumerate(actions):
                     try:
+                        # Skip invalid entries
+                        if not isinstance(action, dict):
+                            continue
+                        
+                        print(f"[Playwright] Action {i+1}: {action}")
+                        
+                        def build_selector(a: Dict) -> str:
+                            st = a.get("selector_type", "class")
+                            sv = a.get("selector_value", "")
+                            if st == "css":
+                                return sv
+                            if st == "id":
+                                return f"#{sv}"
+                            if st == "name":
+                                return f"[name=\"{sv}\"]"
+                            if st == "type":
+                                return f"[type=\"{sv}\"]"
+                            # default: class
+                            return f".{sv}"
+                        
                         if action.get("input"):
                             # Fill input field
-                            selector = f".{action['selector_value']}"
+                            selector = build_selector(action)
                             page.fill(selector, action["input"])
                             
                         elif action.get("click"):
                             # Click element
-                            selector = f".{action['selector_value']}"
-                            page.click(selector)
+                            selector = build_selector(action)
+                            print(f"[Playwright] Clicking selector '{selector}'")
                             
-                        elif action.get("check_type") == "exists":
+                            # Check if element exists before clicking
+                            element = page.locator(selector)
+                            if element.count() == 0:
+                                print(f"[Playwright] Click element not found: {selector}")
+                                errors.append(f"Click element {action['selector_value']} not found")
+                            else:
+                                page.click(selector)
+                                print(f"[Playwright] Successfully clicked {selector}")
+                            
+                        elif action.get("input_variants"):
+                            # Try the first non-empty variant
+                            variants = action.get("input_variants", [])
+                            to_fill = None
+                            for v in variants:
+                                if isinstance(v, str) and v is not None:
+                                    to_fill = v
+                                    break
+                            if to_fill is None:
+                                to_fill = ""
+                            selector = build_selector(action)
+                            print(f"[Playwright] Filling selector '{selector}' with value '{to_fill}'")
+                            
+                            # Check if element exists before filling
+                            element = page.locator(selector)
+                            if element.count() == 0:
+                                print(f"[Playwright] Element not found: {selector}")
+                                errors.append(f"Element {action['selector_value']} not found")
+                            else:
+                                page.fill(selector, to_fill)
+                                print(f"[Playwright] Successfully filled {selector}")
+                            
+                        # Wait for any UI updates after action
+                        page.wait_for_timeout(500)
+                        
+                        if action.get("check_type") == "exists":
                             # Check if element exists
-                            selector = f".{action['selector_value']}"
+                            selector = build_selector(action)
                             element = page.locator(selector)
                             if not element.count():
                                 errors.append(f"Element {action['selector_value']} not found")
                         
-                        # Take screenshot after each action
+                        # Take high-quality screenshot after each action
                         screenshot_path = screenshots_dir / f"step_{i+1}.png"
-                        page.screenshot(path=str(screenshot_path))
-                        screenshots.append(str(screenshot_path))
+                        try:
+                            page.screenshot(
+                                path=str(screenshot_path),
+                                full_page=True,  # Capture entire page
+                                type='png'       # PNG format for better quality
+                            )
+                            screenshots.append(str(screenshot_path))
+                        except Exception as e:
+                            errors.append(f"Screenshot capture failed: {str(e)}")
                         
                     except Exception as e:
                         errors.append(f"Action {i+1} failed: {str(e)}")
@@ -395,27 +539,76 @@ class TaskValidator:
                 validations = config.get("validate", [])
                 for validation in validations:
                     try:
-                        if validation.get("type") == "text_present":
-                            content = page.content()
-                            if validation["value"] not in content:
-                                errors.append(f"Expected text '{validation['value']}' not found")
+                        if not isinstance(validation, dict):
+                            continue
+                        vtype = validation.get("type")
+                        if vtype == "text_present":
+                            text_value = validation["value"]
+                            tag = validation.get("tag")
+                            
+                            if tag:
+                                # Check text within specific HTML tag
+                                try:
+                                    elements = page.locator(tag).all()
+                                    found = False
+                                    for element in elements:
+                                        element_text = element.text_content()
+                                        if text_value in element_text:
+                                            found = True
+                                            break
+                                    
+                                    if not found:
+                                        errors.append(f"Expected text '{text_value}' not found in <{tag}> elements")
+                                    else:
+                                        score += validation.get("points", 0)
+                                except Exception as e:
+                                    errors.append(f"Error checking text in <{tag}>: {str(e)}")
                             else:
-                                score += validation.get("points", 0)
-                                
-                        elif validation.get("type") == "url_redirect":
+                                # Check text anywhere in page content (original behavior)
+                                content = page.content()
+                                if text_value not in content:
+                                    errors.append(f"Expected text '{text_value}' not found")
+                                else:
+                                    score += validation.get("points", 0)
+                        
+                        elif vtype == "url_redirect":
                             current_url = page.url
                             if validation["value"] not in current_url:
                                 errors.append(f"Expected URL '{validation['value']}' not found in {current_url}")
                             else:
                                 score += validation.get("points", 0)
+                        
+                        elif vtype == "status_code":
+                            try:
+                                expected = int(validation.get("value", 200))
+                            except Exception:
+                                expected = 200
+                            status = None
+                            if nav_response is not None:
+                                try:
+                                    attr = getattr(nav_response, "status", None)
+                                    status = attr() if callable(attr) else attr
+                                except Exception:
+                                    status = None
+                            if status != expected:
+                                errors.append(f"Unexpected status code: {status} (expected {expected})")
+                            else:
+                                score += validation.get("points", 0)
                                 
                     except Exception as e:
-                        errors.append(f"Validation failed: {str(e)}")
+                        errors.append(f"Validation failed: {str(e) or type(e).__name__}")
                 
-                # Take final screenshot
+                # Take high-quality final screenshot
                 final_screenshot = screenshots_dir / "final.png"
-                page.screenshot(path=str(final_screenshot))
-                screenshots.append(str(final_screenshot))
+                try:
+                    page.screenshot(
+                        path=str(final_screenshot),
+                        full_page=True,  # Capture entire page
+                        type='png'       # PNG format for better quality
+                    )
+                    screenshots.append(str(final_screenshot))
+                except Exception as e:
+                    errors.append(f"Final screenshot capture failed: {str(e)}")
                 
                 browser.close()
                 
@@ -429,7 +622,7 @@ class TaskValidator:
                     "max_score": max_score,
                     "errors": errors,
                     "screenshots": screenshots,
-                    "message": "Playwright test completed successfully" if success else f"Playwright test failed: {'; '.join(errors)}"
+                    "message": "UI test completed successfully" if success else f"UI test failed: {'; '.join(errors)}"
                 }
                 
         except NotImplementedError as e:

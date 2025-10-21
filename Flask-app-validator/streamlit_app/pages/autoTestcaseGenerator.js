@@ -144,6 +144,51 @@ export async function generateProjectJSON(dir, projectMeta = {}) {
   const base = existing || { project, description, tasks: [] };
   let taskId = base.tasks.length + 1;
 
+  // Add a top-level Structure task once per project to validate basic layout
+  try {
+    const allPaths = Object.keys(files || {});
+    const hasTemplatesDir = allPaths.some(p => p.replace(/\\/g, "/").startsWith("templates/"));
+    const hasStaticDir = allPaths.some(p => p.replace(/\\/g, "/").startsWith("static/"));
+    const hasAppPy = allPaths.some(p => p.endsWith("app.py"));
+    const hasBaseHtml = allPaths.some(p => p.replace(/\\/g, "/").endsWith("templates/base.html"));
+
+    const structureChecks = [];
+    const structurePaths = [];
+    // Always include a few canonical checks; the validator can infer from strings
+    structureChecks.push("app.py exists");
+    structureChecks.push("templates folder exists");
+    structureChecks.push("static folder exists");
+    structureChecks.push("templates/base.html exists");
+
+    structurePaths.push("app.py");
+    structurePaths.push("templates/");
+    structurePaths.push("static/");
+    structurePaths.push("templates/base.html");
+
+    const structureTask = {
+      id: taskId++,
+      name: "Validate Project Structure",
+      description: "Check for essential Flask files and directories.",
+      required_files: ["app.py", "templates/", "static/", "templates/base.html"],
+      validation_rules: {
+        type: "structure",
+        points: 10,
+        checks: structureChecks,
+        paths: structurePaths
+      },
+      playwright_test: null,
+      unlock_condition: { min_score: 0, required_tasks: [] }
+    };
+
+    // Only add if a similar structure task isn't already present
+    const hasExistingStructure = base.tasks.some(t => (t.validation_rules && t.validation_rules.type) === "structure");
+    if (!hasExistingStructure) {
+      base.tasks.push(structureTask);
+    }
+  } catch (e) {
+    console.warn("Failed to add structure task:", e?.message || e);
+  }
+
   for (const [filename, fileData] of Object.entries(results.Code_Validation)) {
     const ext = path.extname(filename).substring(1);
     const shortName = path.basename(filename, path.extname(filename));

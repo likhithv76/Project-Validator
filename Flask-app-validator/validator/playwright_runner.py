@@ -47,7 +47,7 @@ class PlaywrightUIRunner:
             
             # Try different browser launch strategies
             browser_launch_strategies = [
-                # Strategy 1: Standard headless with Windows-specific args
+                # Strategy 1: High-quality headless with enhanced settings
                 {
                     "headless": True,
                     "args": [
@@ -60,7 +60,10 @@ class PlaywrightUIRunner:
                         "--disable-background-timer-throttling",
                         "--disable-backgrounding-occluded-windows",
                         "--disable-renderer-backgrounding",
-                        "--disable-ipc-flooding-protection"
+                        "--disable-ipc-flooding-protection",
+                        "--force-device-scale-factor=2",  # Higher DPI for crisp screenshots
+                        "--high-dpi-support=1",
+                        "--force-color-profile=srgb"
                     ]
                 },
                 # Strategy 2: Minimal args
@@ -98,8 +101,11 @@ class PlaywrightUIRunner:
                 raise Exception("All browser launch strategies failed")
             
             self.context = await self.browser.new_context(
-                viewport={"width": 1280, "height": 720},
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                viewport={"width": 1920, "height": 1080},  # High resolution viewport
+                device_scale_factor=2,  # 2x scaling for better quality
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                color_scheme="light",  # Ensure consistent color scheme
+                reduced_motion="reduce"  # Reduce animations for cleaner screenshots
             )
             
             self.log("Playwright UI runner initialized successfully")
@@ -377,7 +383,7 @@ class PlaywrightUIRunner:
             raise Exception(f"Expected result not achieved: {e}")
     
     async def _capture_screenshot(self, page: Page, route: str, test_name: str) -> Optional[str]:
-        """Capture screenshot of current page state."""
+        """Capture high-quality screenshot of current page state."""
         try:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             safe_route = route.replace("/", "_").replace("\\", "_")
@@ -385,7 +391,12 @@ class PlaywrightUIRunner:
             filename = f"{safe_route}_{safe_test}_{timestamp}.png"
             screenshot_path = self.screenshots_dir / filename
             
-            await page.screenshot(path=str(screenshot_path))
+            # Enhanced screenshot with high quality settings
+            await page.screenshot(
+                path=str(screenshot_path),
+                full_page=True,  # Capture entire page, not just viewport
+                type='png'       # PNG format for better quality
+            )
             return str(screenshot_path)
             
         except Exception as e:

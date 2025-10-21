@@ -22,9 +22,13 @@ if uploaded_zip:
     zip_path = os.path.join(tmp_dir, uploaded_zip.name)
     with open(zip_path, "wb") as f:
         f.write(uploaded_zip.getvalue())
-    with zipfile.ZipFile(zip_path, "r") as z:
-        z.extractall(tmp_dir)
-    st.success("Uploaded and extracted project.")
+    try:
+        with zipfile.ZipFile(zip_path, "r") as z:
+            z.extractall(tmp_dir)
+        st.success("Uploaded and extracted project.")
+    except (zipfile.BadZipFile, EOFError) as e:
+        st.error("The uploaded ZIP appears to be corrupted or incomplete. Please re-upload a valid ZIP file.")
+        st.stop()
 
     col_left, col_right = st.columns([0.5, 0.5])
 
@@ -68,41 +72,17 @@ if uploaded_zip:
                 st.error(f"Error reading file: {e}")
 
         st.markdown("---")
-        st.subheader("Testcase Generation Configuration")
-        
+        st.subheader("Auto-generate Testcases")
+
         # Initialize Gemini generator
         gemini_generator = GeminiTestCaseGenerator()
         generation_method = gemini_generator.get_generation_method()
-        
-        # Configuration section
-        with st.expander("⚙️ Generation Settings", expanded=False):
-            col_config1, col_config2 = st.columns(2)
-            
-            with col_config1:
-                st.markdown("**Current Method:**")
-                if generation_method == 'AI':
-                    st.success(f"🤖 AI Generation (Gemini)")
-                if not gemini_generator.is_ai_enabled():
-                    st.warning("⚠️ Gemini AI not configured")
-                    st.code("Set GEMINI_API_KEY in .env")
-                else:
-                    st.info(f"📝 Parser Generation")
-                    
-            with col_config2:
-                st.markdown("**Configuration File:**")
-                st.code(".env")
-                if st.button("📁 Open Config", help="Edit .env to change settings"):
-                    st.info("Edit .env file to change TEST_CASE_GENERATOR_METHOD")
-
-        st.markdown("---")
-        st.subheader("Auto-generate Testcases")
 
         if st.button("Generate Testcases", use_container_width=True):
             st.info("Generating testcases... Please wait.")
             try:
                 if generation_method == 'AI' and gemini_generator.is_ai_enabled():
                     # Use Gemini AI generation
-                    st.info("🤖 Generating testcases using Gemini AI...")
                     project_meta = {
                         "project": "New Project",
                         "description": "Auto-generated progressive validation project"
@@ -114,7 +94,7 @@ if uploaded_zip:
                     with open(project_file, "w") as f:
                         json.dump(result_json, f, indent=2)
                     
-                    st.success("✅ AI-generated testcases completed!")
+                    st.success("Testcases generated")
                     st.json(result_json)
                     st.session_state.generated_json = result_json
                     
@@ -122,25 +102,27 @@ if uploaded_zip:
                     # Fallback to original parser method
                     st.info("📝 Generating testcases using parser method...")
                     node_script = Path(__file__).parent / "autoTestcaseGenerator.js"
-                result = subprocess.run(
-                    ["node", str(node_script), tmp_dir],
-                    capture_output=True,
-                    text=True
-                )
-                if result.returncode == 0:
-                    st.success("Testcases generated successfully!")
-                    st.text_area("Generator Output Log", result.stdout, height=150)
-                    project_json_path = os.path.join(tmp_dir, "project_tasks.json")
-                    if os.path.exists(project_json_path):
-                        with open(project_json_path, "r", encoding="utf-8") as f:
-                            project_data = json.load(f)
-                        st.json(project_data)
-                        st.session_state.generated_json = project_data
-                        # Store generation timestamp
-                        from datetime import datetime
-                        st.session_state.generation_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    else:
+                    result = subprocess.run(
+                        ["node", str(node_script), tmp_dir],
+                        capture_output=True,
+                        text=True
+                    )
+                    if result.returncode == 0:
+                        st.success("Testcases generated successfully!")
+                        st.text_area("Generator Output Log", result.stdout, height=150)
+                        project_json_path = os.path.join(tmp_dir, "project_tasks.json")
+                        if os.path.exists(project_json_path):
+                            with open(project_json_path, "r", encoding="utf-8") as f:
+                                project_data = json.load(f)
+                            st.json(project_data)
+                            st.session_state.generated_json = project_data
+                            # Store generation timestamp
+                            from datetime import datetime
+                            st.session_state.generation_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        else:
                             st.error(f"Parser generation failed: {result.stderr}")
+                    else:
+                        st.error(f"Parser generation failed: {result.stderr}")
                         
             except Exception as e:
                 st.error(f"Generation failed: {str(e)}")
@@ -208,6 +190,11 @@ if uploaded_zip:
                     # Validation Rules - populate from analysis
                     st.markdown("**Validation Rules:**")
                     validation_rules = task.get("validation_rules", {})
+                    
+                    # Ensure validation_rules is a dictionary, not a list
+                    if isinstance(validation_rules, list):
+                        validation_rules = {}
+                    
                     analysis = validation_rules.get("analysis", {})
                     
                     col1, col2 = st.columns(2)
@@ -287,15 +274,19 @@ if uploaded_zip:
                     
                     task["validation_rules"] = validation_rules
                     
-                    # Playwright Test - populate from analysis
-                    st.markdown("**Playwright Test:**")
-                    playwright_test = task.get("playwright_test", {}) or {}
+                    # UI Test - populate from analysis
+                    st.markdown("**UI Test:**")
+                    ui_test = task.get("playwright_test", {}) or {}
+                    
+                    # Ensure ui_test is a dictionary, not a list
+                    if isinstance(ui_test, list):
+                        ui_test = {}
                     
                     col3, col4 = st.columns(2)
                     with col3:
                         # Get current values
-                        current_route = playwright_test.get("route", "")
-                        current_pw_points = playwright_test.get("points", validation_rules.get("points", 10))
+                        current_route = ui_test.get("route", "")
+                        current_ui_points = ui_test.get("points", validation_rules.get("points", 10))
                         
                         # Generate route from file name
                         file_name = validation_rules.get("file", "")
@@ -306,19 +297,19 @@ if uploaded_zip:
                             value=current_route or route_suggestion,
                             key=f"pw_route_{i}"
                         )
-                        new_pw_points = st.number_input(
+                        new_ui_points = st.number_input(
                             "Points", 
                             min_value=1, 
                             max_value=100, 
-                            value=current_pw_points,
-                            key=f"pw_points_{i}"
+                            value=current_ui_points,
+                            key=f"ui_points_{i}"
                         )
                         
                         # Update only if changed
                         if new_route != current_route:
-                            playwright_test["route"] = new_route
-                        if new_pw_points != current_pw_points:
-                            playwright_test["points"] = new_pw_points
+                            ui_test["route"] = new_route
+                        if new_ui_points != current_ui_points:
+                            ui_test["points"] = new_ui_points
                     
                     with col4:
                         # Generate actions from analysis
@@ -331,26 +322,34 @@ if uploaded_zip:
                             suggested_actions.append(f"Click {len(links)} links")
                         
                         # Convert actions to readable text format
-                        actions = playwright_test.get("actions", suggested_actions)
-                        if isinstance(actions, list) and actions and isinstance(actions[0], dict):
-                            # Convert dict actions to readable text
-                            actions_text = []
-                            for action in actions:
-                                if action.get("click"):
-                                    actions_text.append(f"Click: {action.get('selector_type', 'class')}={action.get('selector_value', '')}")
-                                elif action.get("input_variants"):
-                                    variants = ", ".join(action.get("input_variants", []))
-                                    actions_text.append(f"Fill {action.get('selector_type', 'class')}={action.get('selector_value', '')}: {variants}")
-                                else:
-                                    actions_text.append(str(action))
-                            actions_text = "\n".join(actions_text)
+                        actions = ui_test.get("actions", suggested_actions)
+                        actions_text = ""
+                        if isinstance(actions, list):
+                            # If list of dicts → pretty lines; else stringify items safely
+                            if actions and isinstance(actions[0], dict):
+                                lines = []
+                                for action in actions:
+                                    if not isinstance(action, dict):
+                                        lines.append(str(action))
+                                        continue
+                                    if action.get("click"):
+                                        lines.append(f"Click: {action.get('selector_type', 'class')}={action.get('selector_value', '')}")
+                                    elif action.get("input_variants"):
+                                        variants = ", ".join([str(v) for v in action.get("input_variants", [])])
+                                        lines.append(f"Fill {action.get('selector_type', 'class')}={action.get('selector_value', '')}: {variants}")
+                                    else:
+                                        lines.append(str(action))
+                                actions_text = "\n".join(lines)
+                            else:
+                                actions_text = "\n".join([str(a) for a in actions]) if actions else ""
                         else:
-                            actions_text = "\n".join(actions) if actions else ""
+                            # Not a list; stringify whatever came through
+                            actions_text = str(actions) if actions else ""
                         actions_input = st.text_area(
                             "Actions (one per line)",
                             value=actions_text,
                             height=100,
-                            key=f"pw_actions_{i}"
+                            key=f"ui_actions_{i}"
                         )
                         
                         # Parse actions back to proper format
@@ -385,13 +384,13 @@ if uploaded_zip:
                                 else:
                                     # Keep as string for manual actions
                                     parsed_actions.append(line)
-                            playwright_test["actions"] = parsed_actions
+                            ui_test["actions"] = parsed_actions
                         else:
-                            playwright_test["actions"] = []
+                            ui_test["actions"] = []
                     
                     # Validation section
                     st.markdown("**Validation Rules:**")
-                    validation_rules_list = playwright_test.get("validate", [])
+                    validation_rules_list = ui_test.get("validate", [])
                     if isinstance(validation_rules_list, list) and validation_rules_list and isinstance(validation_rules_list[0], dict):
                         # Convert dict validation rules to readable text
                         validation_text = []
@@ -407,7 +406,7 @@ if uploaded_zip:
                         "Validation Rules (one per line)",
                         value=validation_text,
                         height=100,
-                        key=f"pw_validate_{i}",
+                        key=f"ui_validate_{i}",
                         help="Format: type: value (e.g., 'text_present: Login successful')"
                     )
                     
@@ -425,15 +424,19 @@ if uploaded_zip:
                             else:
                                 # Keep as string for manual rules
                                 parsed_validation.append(line)
-                        playwright_test["validate"] = parsed_validation
+                        ui_test["validate"] = parsed_validation
                     else:
-                        playwright_test["validate"] = []
+                        ui_test["validate"] = []
                     
-                    task["playwright_test"] = playwright_test
+                    task["playwright_test"] = ui_test
                     
                     # Unlock Condition
                     st.markdown("**Unlock Condition:**")
                     unlock_condition = task.get("unlock_condition", {})
+                    
+                    # Ensure unlock_condition is a dictionary, not a list
+                    if isinstance(unlock_condition, list):
+                        unlock_condition = {}
                     
                     col5, col6 = st.columns(2)
                     with col5:
@@ -552,7 +555,7 @@ Files included:
 To use this package:
 1. Extract the ZIP file to get the project source code
 2. Use the JSON configuration with your validation system
-3. Run Playwright tests using the configured routes and actions
+3. Run UI tests using the configured routes and actions
 """)
                     
                     st.success(f"Project saved and available to students!")
@@ -616,7 +619,9 @@ To use this package:
                         st.error(f"Invalid JSON: {e}")
         
         else:
-            st.info("Upload a project ZIP and generate testcases to configure tasks.")
+            # Only show this message if no file has been uploaded
+            if not uploaded_zip:
+                st.info("Upload a project ZIP and generate testcases to configure tasks.")
             
             # Comprehensive Project Configuration Form
             st.markdown("### Create Project Configuration")
@@ -624,9 +629,9 @@ To use this package:
             # Project metadata
             col1, col2 = st.columns(2)
             with col1:
-                project_name = st.text_input("Project Name", value="New Project")
+                project_name = st.text_input("Project Name", value="")
             with col2:
-                project_description = st.text_input("Project Description", value="Auto-generated progressive validation project")
+                project_description = st.text_input("Project Description", value="")
             
             st.markdown("---")
             st.markdown("#### Add Tasks")
@@ -652,22 +657,22 @@ To use this package:
                             "static/style.css", "static/script.js", "main.py", 
                             "run.py", "config.py", "models.py", "views.py"
                         ],
-                        default=["templates/login.html"]
+                        default=[]
                     )
                 
                 with col4:
-                    file_type = st.selectbox("File Type", ["html", "py", "css", "js"])
-                    points = st.number_input("Points", min_value=1, max_value=50, value=10)
+                    file_type = st.selectbox("File Type", ["structure", "html", "py", "css", "js"])
+                    points = st.number_input("Points", min_value=1, max_value=50, value=1)
                 
-                # Playwright test configuration
-                st.markdown("**Playwright Test Configuration:**")
+                # UI test configuration
+                st.markdown("**UI Test Configuration:**")
                 col5, col6 = st.columns(2)
                 with col5:
                     route = st.text_input("Route", placeholder="/login")
                 with col6:
-                    playwright_points = st.number_input("Playwright Points", min_value=1, max_value=50, value=10)
+                    ui_points = st.number_input("UI Test Points", min_value=1, max_value=50, value=1)
                 
-                # Actions for playwright
+                # Actions for UI test
                 st.markdown("**Actions:**")
                 action_type = st.selectbox("Action Type", ["click", "input", "navigate"])
                 
@@ -710,11 +715,7 @@ To use this package:
                             })
                         
                         # Create validation rules
-                        validate = [
-                            {"type": "text_present", "value": "successful"},
-                            {"type": "text_present", "value": "Registration successful"},
-                            {"type": "text_present", "value": "Login successful"}
-                        ]
+                        validate = []
                         
                         # Add custom validation texts
                         for text in validation_texts.split('\n'):
@@ -725,12 +726,12 @@ To use this package:
                         task_id = len(st.session_state.tasks) + 1
                         new_task = {
                             "id": task_id,
-                "name": task_name,
+                            "name": task_name,
                             "description": task_description,
                             "required_files": required_files,
                             "validation_rules": {
                                 "type": file_type,
-                                "file": required_files[0] if required_files else "",
+                                "file": required_files[0] if (file_type != "structure" and required_files) else "",
                                 "points": points,
                                 "generatedTests": [],
                                 "analysis": {"elements": [], "selectors": []}
@@ -739,7 +740,7 @@ To use this package:
                                 "route": route,
                                 "actions": actions,
                                 "validate": validate,
-                                "points": playwright_points
+                                "points": ui_points
                             },
                             "unlock_condition": {"min_score": 0, "required_tasks": []}
                         }
@@ -761,7 +762,7 @@ To use this package:
                             st.write(f"**Description:** {task['description']}")
                             st.write(f"**Required Files:** {', '.join(task['required_files'])}")
                             st.write(f"**Route:** {task['playwright_test']['route']}")
-                            st.write(f"**Points:** {task['validation_rules']['points']} (validation) + {task['playwright_test']['points']} (playwright)")
+                            st.write(f"**Points:** {task['validation_rules']['points']} (validation) + {task['playwright_test']['points']} (UI test)")
                         with col10:
                             if st.button("Remove", key=f"remove_{i}"):
                                 st.session_state.tasks.pop(i)

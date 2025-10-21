@@ -1,15 +1,11 @@
 import os
 import json
+import subprocess
 import google.generativeai as genai
 from pathlib import Path
 from typing import Dict, List, Any
 
 class GeminiTestCaseGenerator:
-    """
-    Generates AI-driven task-based validation JSON for Flask or web projects using Gemini AI.
-    Supports fallback to parser if AI generation fails.
-    """
-
     def __init__(self):
         self.load_config()
         if self.api_key:
@@ -19,12 +15,10 @@ class GeminiTestCaseGenerator:
             self.model = None
 
     def load_config(self):
-        """Load API keys and settings from environment or .env file"""
-        # Try multiple possible locations for .env file
         possible_env_paths = [
-            Path(".env"),  # Current directory
-            Path(__file__).parent.parent / ".env",  # Project root from this file
-            Path.cwd() / ".env",  # Current working directory
+            Path(".env"),
+            Path(__file__).parent.parent / ".env",
+            Path.cwd() / ".env",
         ]
         
         env_file = None
@@ -45,29 +39,23 @@ class GeminiTestCaseGenerator:
         self.model_name = os.getenv("GEMINI_MODEL", "gemini-2.0-flash-exp")
         self.parser_fallback = os.getenv("PARSER_FALLBACK_ENABLED", "true").lower() == "true"
 
-    # ======================= MAIN GENERATION =======================
+# Generate project JSON
 
     def generate_project_json_with_ai(self, project_dir: str, project_meta: Dict = None) -> Dict:
-        """Generate complete project JSON using Gemini AI"""
         if not self.model:
             raise ValueError("Gemini AI not configured. Please set GEMINI_API_KEY in environment variables.")
 
         try:
-            # Analyze folder and sample contents
             project_analysis = self._analyze_project_structure(project_dir)
 
-            # Create AI prompt
             prompt = self._create_generation_prompt(project_analysis, project_meta)
 
-            # Generate structured JSON with better formatting
             try:
-                # Try with structured output if available (newer SDK versions)
                 response = self.model.generate_content(
                     prompt,
                     generation_config={"response_mime_type": "application/json"}
                 )
             except Exception:
-                # Fallback to regular generation
                 response = self.model.generate_content(prompt)
             project_json = self._parse_ai_response(response.text, project_meta)
 
@@ -81,10 +69,8 @@ class GeminiTestCaseGenerator:
             else:
                 raise e
 
-    # ======================= PROJECT ANALYSIS =======================
-
+# Analyze project structure
     def _analyze_project_structure(self, project_dir: str) -> Dict:
-        """Collect a structured overview of the project for the AI prompt"""
         analysis = {"files": [], "html_files": [], "python_files": [], "static_files": []}
 
         for root, _, files in os.walk(project_dir):
@@ -107,119 +93,232 @@ class GeminiTestCaseGenerator:
 
         return analysis
 
-    # ======================= PROMPT CREATION =======================
-
+# Create generation prompt
     def _create_generation_prompt(self, analysis: Dict, project_meta: Dict = None) -> str:
-        """Construct hierarchical prompt for Gemini AI"""
         project_name = project_meta.get("project", "New Project") if project_meta else "New Project"
-        description = project_meta.get("description", "Auto-generated progressive validation project") if project_meta else "Auto-generated progressive validation project"
+        description = project_meta.get("description", "Description of the project") if project_meta else "Description of the project"
 
         html_files = ", ".join(analysis["html_files"]) or "None"
         python_files = ", ".join(analysis["python_files"]) or "None"
 
         prompt = f"""
-You are an expert in creating structured task-based validation flows for Flask web applications.
+You are an expert in automated test design and Flask web application validation.
 
-Analyze the given project and generate a JSON configuration for a task-based validator.
-Each task represents a stage in the student's progress.
+Analyze the provided project structure and generate a **realistic, progressive task-based JSON configuration**.
+Each task represents a stage of the student's work — from setup verification to functional page testing.
 
-### Project Details
+---
+
+### Project Context
 Project Name: {project_name}
-Description: {description}
+Project Description: {description}
 
-### Project Structure
-HTML Files: {html_files}
-Python Files: {python_files}
-Static Assets: {', '.join(analysis['static_files'])}
+### Project File Structure
+```
+app.py
+|
+templates/
+     |
+      base.html
+      index.html
+      about.html
+      contact.html
+|
+static/
+     |
+      css/
+      js/
+|
+requirements.txt
+```
 
-### HTML Samples
+### Sample HTML Content
 """
-        # Add sample HTML snippets
         for html_file in analysis["html_files"][:3]:
             key = f"{html_file}_content"
             if key in analysis:
                 prompt += f"\n#### {html_file}\n{analysis[key]}\n"
 
         prompt += """
-### Task Generation Rules
-1. **Task 1** must verify the project structure and basic Flask setup:
-   - Ensure `app.py` exists and defines Flask routes.
-   - Validate folder structure (e.g., templates/, static/, instance/).
-   - 5–10 points total.
-   - No Playwright required for this task.
+---
 
-2. **Subsequent tasks** (Task 2+) must target actual project features:
-   - Create one task per major HTML or feature file (login, register, dashboard, etc.).
-   - Each task includes:
-     - Description of its purpose.
-     - `required_files` list.
-     - `validation_rules` (elements, inputs, content).
-     - `playwright_test` simulating real user actions.
-   - For form pages, include positive and negative input variations (short passwords, invalid emails, etc.)
-   - Add meaningful validations (success messages, redirects, etc.)
-   - Each task 10–20 points.
-   - Unlock conditions should follow progression (Task 2 unlocks after Task 1, etc.).
+### Task Design Strategy
 
-3. Return the final JSON in the following format ONLY:
-{
-  "project": "Project Name",
-  "description": "Project Description",
+1. **Task 1: Project Setup Verification**
+   - **Description**: "Set up your Flask project with the basic file structure including app.py, templates folder, and static folder"
+   - **Required Files**: Include ALL essential files: `["app.py", "templates/", "static/", "requirements.txt"]`
+   - Points: 5–10 based on complexity.
+   - No UI test actions.
+   - Validation rules: use "structure" type for file existence checks.
+
+2. **Feature Tasks (Task 2+)**
+   - Create one task per functional HTML page or major Python module.
+   - Tasks must progress logically (login → register → dashboard → database integration).
+   - **CRITICAL**: Each task description must tell students WHAT TO BUILD, not what to validate
+   - **Required Files**: Include ALL necessary files for each task (HTML templates, Python files, CSS, JS)
+   - For each HTML file containing forms:
+     - Identify all input fields.
+     - Map inputs to UI test actions.
+     - Include both valid and invalid inputs (blank, too short, invalid email, weak password, etc.)
+   - For each route in `app.py`:
+     - Link HTML templates to Flask routes automatically.
+   - Points:
+     - Simple form (1–2 inputs): 10 points total.
+     - Moderate form (3–5 inputs): 15 points.
+     - Complex page (6+ inputs, multiple validations): 20–25 points.
+     - Backend / database logic validation: 25–30 points.
+
+3. **Description Guidelines (CRITICAL)**
+   - **Project Description**: Brief overview of what the project is about (for students)
+   - **Task Description**: ALWAYS write clear, actionable instructions for students on what they need to do
+   - **NEVER** write descriptions about validation or testing - only what students should build
+   - **Examples of GOOD task descriptions:**
+     - "Create a home page that displays a welcome message and navigation menu"
+     - "Build a login form with username and password fields that validates user input"
+     - "Implement a contact form with name, email, and message fields that submits to /contact"
+     - "Create an about page that displays project information and features"
+     - "Add a dashboard page that shows user information after login"
+   - **Examples of BAD task descriptions:**
+     - "Validate that the login form has proper error handling"
+     - "Test the contact form submission functionality"
+     - "Ensure the home page loads correctly"
+     - "Check that all required fields are present"
+
+4. **Scoring Constraints**
+   - Total project score should roughly fall between 70–100.
+   - Static validations (HTML/CSS) contribute 40–60%.
+   - UI test (dynamic) validations contribute 40–60%.
+   - Each task's `points` field should reflect its individual difficulty.
+   - Avoid duplicate or identical scoring.
+
+5. **UI Test Rules (STRICT)**
+   - Use simple selectors only:
+     - `"selector_type"` ∈ ["id", "name", "class"]
+     - `"selector_value"` should be direct, not CSS-chained (e.g., use `"login_button"`, not `"button.login_button"`).
+   - Allowed action types:
+     - `input_variants` for text fields.
+     - `click` for buttons.
+   - Example:
+     ```json
+     {"selector_type": "name", "selector_value": "username", "input_variants": ["", "test_user"]}
+     {"selector_type": "type", "selector_value": "submit", "click": true}
+     ```
+   - Validation example with tag constraints:
+     ```json
+     {"type": "text_present", "value": "Login Successful", "tag": "h2"}
+     {"type": "text_present", "value": "Invalid credentials", "tag": "div"}
+     {"type": "text_present", "value": "Email is required", "tag": "label"}
+     ```
+   - Do not use `navigate` or `css` selectors.
+   - Each form field must have at least one positive and one negative input test.
+
+6. **Validation Rules (STRICT)**
+   - For static validation rules, use these types:
+     - `"structure"` for file existence checks (use "checks" array)
+     - `"html"` for HTML content validation (MUST include "file" field)
+     - `"requirements"` for package dependencies
+     - `"database"` for database validation
+     - `"security"` for security features
+     - `"runtime"` for Flask route validation
+   - **CRITICAL**: HTML validation rules MUST include:
+     - `"type": "html"`
+     - `"file": "path/to/file.html"` (REQUIRED)
+     - `"mustHaveElements": [...]` (optional)
+     - `"mustHaveContent": [...]` (optional)
+     - `"mustHaveClasses": [...]` (optional)
+     - `"points": number`
+   - **Examples**:
+     ```json
+     // Structure validation (for file existence)
+     {"type": "structure", "points": 10, "checks": ["app.py exists", "templates folder exists"]}
+     
+     // HTML validation (for content)
+     {"type": "html", "file": "templates/index.html", "mustHaveElements": ["h1", "nav"], "mustHaveContent": ["Welcome"], "points": 15}
+     ```
+   - For UI test validation, use these types:
+     - `"text_present"` for text content validation
+     - `"url_redirect"` for URL redirection validation
+     - `"status_code"` for HTTP status validation
+     - `"tag"` (optional) for text_present: specify HTML tag where text should appear
+   - Include at least one success and one failure validation per task.
+
+7. **UI Test Constraints**
+   - Verify:
+     - Empty form submissions produce error messages.
+     - Invalid formats (e.g., wrong email) are caught.
+     - Successful submission redirects to the next route or shows success text.
+   - Routes should be inferred from Flask conventions (e.g., `/login`, `/register`, `/dashboard`).
+
+8. **Return Format**
+   - Return only valid JSON.
+   - Each field must have commas between keys.
+   - The JSON must follow this schema:
+     {
+       "project": "Simple Flask Web App",
+       "description": "A basic Flask application with home, about, and contact pages",
   "tasks": [
     {
       "id": 1,
-      "name": "Validate Project Structure",
-      "description": "Check Flask setup and folder organization.",
-      "required_files": ["app.py", "templates/", "static/"],
+           "name": "Project Setup",
+           "description": "Set up your Flask project with the basic file structure including app.py, templates folder, and static folder",
+           "required_files": ["app.py", "templates/", "static/", "requirements.txt"],
       "validation_rules": {
         "type": "structure",
         "points": 10,
         "checks": ["app.py exists", "templates folder exists", "static folder exists"]
       },
-      "playwright_test": null,
+           "playwright_test": {
+             "route": "/",
+             "actions": [],
+             "validate": [
+               {"type": "status_code", "value": 200}
+             ],
+             "points": 5
+           },
       "unlock_condition": {"min_score": 0, "required_tasks": []}
     },
     {
       "id": 2,
-      "name": "Login Page Validation",
-      "description": "Validate login form fields and logic.",
-      "required_files": ["templates/login.html"],
+           "name": "Home Page",
+           "description": "Create a home page that displays a welcome message and navigation menu with links to About and Contact pages",
+           "required_files": ["templates/index.html", "templates/base.html", "app.py"],
       "validation_rules": {
         "type": "html",
-        "file": "templates/login.html",
-        "mustHaveElements": ["form", "input", "button"],
-        "mustHaveClasses": ["login_username", "login_password", "login_submit"],
+             "file": "templates/index.html",
+             "mustHaveElements": ["h1", "nav", "a"],
+             "mustHaveContent": ["Welcome", "Home", "About", "Contact"],
         "points": 15
       },
       "playwright_test": {
-        "route": "/login",
+             "route": "/",
         "actions": [
-          {"selector_type": "class", "selector_value": "login_username", "input_variants": ["", "test_user"]},
-          {"selector_type": "class", "selector_value": "login_password", "input_variants": ["", "WrongPass123!"]},
-          {"selector_type": "class", "selector_value": "login_submit", "click": true}
+               {"selector_type": "class", "selector_value": "nav-link", "click": true}
         ],
         "validate": [
-          {"type": "text_present", "value": "Login successful"},
-          {"type": "text_present", "value": "Invalid credentials"}
+               {"type": "text_present", "value": "Welcome", "tag": "h1"},
+          {"type": "status_code", "value": 200}
         ],
-        "points": 15
+             "points": 10
       },
       "unlock_condition": {"min_score": 10, "required_tasks": [1]}
     }
   ]
 }
-
-### Return ONLY valid JSON with proper commas between all fields. No explanations, no markdown, no comments.
-### Ensure every field is separated by commas and the JSON is syntactically correct.
+   - No extra commentary or Markdown fences.
+   - Ensure JSON is syntactically valid.
+   - **REMEMBER**: All task descriptions must be instructions for students, NOT validation descriptions!
+   - **CRITICAL ERROR TO AVOID**: Never use `"checks"` array with `"type": "html"` - this causes validation errors!
+     - ❌ Wrong: `{"type": "html", "checks": ["file exists"]}`
+     - ✅ Correct: `{"type": "structure", "checks": ["file exists"]}` OR `{"type": "html", "file": "path.html", "mustHaveElements": [...]}`
+   - **NEVER create empty validation rules**: `"validation_rules": {}` will cause "Unknown rule type" errors
+   - **Every task MUST have proper validation rules** - use structure for file checks, html for content validation
 """
         return prompt
 
-    # ======================= RESPONSE PARSING =======================
-
+# Parse AI response
     def _parse_ai_response(self, text: str, project_meta: Dict = None) -> Dict:
-        """Parse AI response into JSON with robust error handling"""
         text = text.strip()
         
-        # Remove markdown code blocks
         if text.startswith("```json"):
             text = text[7:]
         elif text.startswith("```"):
@@ -227,53 +326,129 @@ Static Assets: {', '.join(analysis['static_files'])}
         if text.endswith("```"):
             text = text[:-3]
             
-        # Try to find JSON in the text
+        # Try to find complete JSON object
         json_start = text.find('{')
-        json_end = text.rfind('}')
+        if json_start != -1:
+            # Find the matching closing brace
+            brace_count = 0
+            json_end = -1
+            for i, char in enumerate(text[json_start:], json_start):
+                if char == '{':
+                    brace_count += 1
+                elif char == '}':
+                    brace_count -= 1
+                    if brace_count == 0:
+                        json_end = i
+                        break
+            
+            if json_end != -1:
+                text = text[json_start:json_end + 1]
+            else:
+                # If no complete JSON found, try to find the best partial match
+                json_end = text.rfind('}')
+                if json_end != -1 and json_end > json_start:
+                    text = text[json_start:json_end + 1]
         
-        if json_start != -1 and json_end != -1 and json_end > json_start:
-            text = text[json_start:json_end + 1]
-        
-        # Quick pre-sanitizer for common Gemini JSON formatting issues
-        text = text.replace('\n"', ',\n"')           # put commas before quoted keys
-        text = text.replace('{\n,', '{\n')           # clean stray commas
+        text = text.replace('\n"', ',\n"')
+        text = text.replace('{\n,', '{\n')
         text = text.replace('[\n,', '[\n')
-        text = text.replace('}\n"', '},\n"')         # add commas before closing braces
-        text = text.replace(']\n"', '],\n"')         # add commas before closing brackets
+        text = text.replace('}\n"', '},\n"')
+        text = text.replace(']\n"', '],\n"')
         
         try:
             parsed = json.loads(text)
             if not isinstance(parsed, dict) or "tasks" not in parsed:
                 raise ValueError("Invalid JSON structure: missing 'tasks' key")
+            
+            # Validate task structure and fix common issues
+            for task in parsed.get("tasks", []):
+                validation_rules = task.get("validation_rules", {})
+                
+                # Handle case where validation_rules is a list instead of dict
+                if isinstance(validation_rules, list):
+                    if len(validation_rules) > 0:
+                        # Use the first rule if it's a list
+                        validation_rules = validation_rules[0]
+                    else:
+                        validation_rules = {}
+                    task["validation_rules"] = validation_rules
+                
+                # Fix empty validation rules
+                if not validation_rules or validation_rules == {}:
+                    # Create a basic structure validation rule
+                    task["validation_rules"] = {
+                        "type": "structure",
+                        "points": 10,
+                        "checks": ["Required files exist"]
+                    }
+                
+                # Fix incorrect type with checks array
+                elif isinstance(validation_rules, dict) and validation_rules.get("type") == "html" and "checks" in validation_rules:
+                    validation_rules["type"] = "structure"
+                    print(f"[GeminiTestCaseGenerator] Fixed task {task.get('id', '?')}: Changed 'html' to 'structure' for checks array")
+                
+                # Fix unrealistic scoring requirements
+                unlock_condition = task.get("unlock_condition", {})
+                if isinstance(unlock_condition, dict):
+                    min_score = unlock_condition.get("min_score", 0)
+                    validation_points = validation_rules.get("points", 0) if isinstance(validation_rules, dict) else 0
+                    ui_test = task.get("playwright_test", {})
+                    ui_points = ui_test.get("points", 0) if isinstance(ui_test, dict) else 0
+                    total_possible_points = validation_points + ui_points
+                    
+                    # If min_score is higher than total possible points, fix it
+                    if min_score > total_possible_points and total_possible_points > 0:
+                        # Set min_score to 70% of total possible points (reasonable threshold)
+                        new_min_score = max(1, int(total_possible_points * 0.7))
+                        unlock_condition["min_score"] = new_min_score
+                        print(f"[GeminiTestCaseGenerator] Fixed task {task.get('id', '?')}: Adjusted min_score from {min_score} to {new_min_score} (total possible: {total_possible_points})")
+            
             return parsed
         except json.JSONDecodeError as e:
             print(f"[GeminiTestCaseGenerator] JSON parsing failed: {e}")
             print(f"[GeminiTestCaseGenerator] Raw response: {text[:500]}...")
-            raise ValueError(f"Gemini response not valid JSON: {e}")
+            
+            # Try to create a minimal valid JSON as fallback
+            print(f"[GeminiTestCaseGenerator] Creating fallback JSON structure...")
+            fallback_json = {
+                "project": "New Project",
+                "description": "Auto-generated project (fallback due to parsing error)",
+                "tasks": [
+                    {
+                        "id": 1,
+                        "name": "Project Setup",
+                        "description": "Set up the basic project structure",
+                        "required_files": ["app.py", "requirements.txt"],
+                        "validation_rules": {
+                            "type": "structure",
+                            "points": 10,
+                            "checks": ["app.py exists", "requirements.txt exists"]
+                        },
+                        "playwright_test": None,
+                        "unlock_condition": {"min_score": 0, "required_tasks": []}
+                    }
+                ]
+            }
+            return fallback_json
 
-    # ======================= FALLBACK TO PARSER =======================
-
+# Fallback to parser if gemini generation fails
     def _fallback_to_parser(self, project_dir: str, project_meta: Dict = None) -> Dict:
-        """Fallback method using Node.js parser"""
-        # Define node_script outside try block to avoid scope issues
         node_script = Path(__file__).parent / "pages" / "autoTestcaseGenerator.js"
         
         try:
             if not node_script.exists():
                 raise FileNotFoundError(f"Node.js parser not found: {node_script}")
             
-            # Run the Node.js parser
             result = subprocess.run(
                 ["node", str(node_script), project_dir],
                 capture_output=True,
                 text=True,
-                timeout=60  # 60 second timeout
+                timeout=30
             )
             
             if result.returncode != 0:
                 raise RuntimeError(f"Node.js parser failed: {result.stderr}")
             
-            # Load the generated JSON
             project_file = Path(project_dir) / "project_tasks.json"
             if not project_file.exists():
                 raise FileNotFoundError("Parser did not generate project_tasks.json")
@@ -285,10 +460,9 @@ Static Assets: {', '.join(analysis['static_files'])}
             
         except Exception as e:
             print(f"[GeminiTestCaseGenerator] Parser fallback failed: {e}")
-            # Return a minimal fallback structure
             return {
                 "project": project_meta.get("project", "New Project") if project_meta else "New Project",
-                "description": project_meta.get("description", "Auto-generated project") if project_meta else "Auto-generated project",
+                "description": project_meta.get("description", "Description of the project") if project_meta else "Description of the project",
                 "tasks": []
             }
 

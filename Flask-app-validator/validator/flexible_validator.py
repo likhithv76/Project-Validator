@@ -151,6 +151,8 @@ class FlexibleFlaskValidator:
             try:
                 if rule_type == "html":
                     self._validate_html_rule(rule, points)
+                elif rule_type == "structure":
+                    self._validate_structure_rule(rule, points)
                 elif rule_type == "requirements":
                     self._validate_requirements_rule(rule, points)
                 elif rule_type == "database":
@@ -180,12 +182,43 @@ class FlexibleFlaskValidator:
             with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
             
-            # Check required elements
+            # Check required elements (support simple CSS-like patterns like tag.class and tag[attr='value'])
             missing_elements = []
             if "mustHaveElements" in rule:
                 for element in rule["mustHaveElements"]:
-                    if f"<{element}" not in content:
-                        missing_elements.append(element)
+                    try:
+                        elem = str(element)
+                        found = False
+                        # Support tag.class pattern
+                        if "." in elem and not any(ch in elem for ch in "[]#"):
+                            tag, cls = elem.split(".", 1)
+                            pattern = rf"<\s*{re.escape(tag)}[^>]*class=[\"']([^\"']*)[\"']"
+                            for m in re.finditer(pattern, content):
+                                class_attr = m.group(1)
+                                if re.search(rf"(^|\s){re.escape(cls)}(\s|$)", class_attr):
+                                    found = True
+                                    break
+                        # Support tag[attr='value'] pattern
+                        elif "[" in elem and "]" in elem and elem.find("[") < elem.find("]"):
+                            tag = elem.split("[", 1)[0].strip()
+                            inside = elem.split("[", 1)[1].rsplit("]", 1)[0]
+                            if "=" in inside:
+                                attr, raw_val = inside.split("=", 1)
+                                attr = attr.strip()
+                                val = raw_val.strip().strip('"\'')
+                                pattern = rf"<\s*{re.escape(tag)}[^>]*{re.escape(attr)}\s*=\s*[\"']{re.escape(val)}[\"']"
+                                if re.search(pattern, content):
+                                    found = True
+                        else:
+                            # Simple tag presence check
+                            if f"<{elem}" in content:
+                                found = True
+                        if not found:
+                            missing_elements.append(element)
+                    except Exception:
+                        # Fall back to simple check on error
+                        if f"<{element}" not in content:
+                            missing_elements.append(element)
             
             # Check required classes
             missing_classes = []
@@ -195,10 +228,11 @@ class FlexibleFlaskValidator:
                     if not re.search(r'class=["\'][^"\']*\b' + re.escape(class_name) + r'\b', content):
                         missing_classes.append(class_name)
             
-            # Check required content
+            # Check required content (support alias mustContainText)
             missing_content = []
-            if "mustHaveContent" in rule:
-                for content_text in rule["mustHaveContent"]:
+            content_list = rule.get("mustHaveContent") or rule.get("mustContainText")
+            if content_list:
+                for content_text in content_list:
                     if content_text not in content:
                         missing_content.append(content_text)
             
@@ -267,6 +301,55 @@ class FlexibleFlaskValidator:
                 
         except Exception as e:
             self.add_check(rule_name, False, 0, f"Error reading template: {e}")
+
+    def _validate_structure_rule(self, rule, points):
+        """Validate project structure (files/folders existence)."""
+        rule_name = "Structure: required paths exist"
+        required_paths = []
+        
+        # Preferred explicit list
+        if isinstance(rule.get("paths"), list):
+            required_paths.extend([str(p) for p in rule.get("paths", [])])
+        
+        # Heuristic from "checks" like "templates/base.html exists" or "templates folder exists"
+        if not required_paths and isinstance(rule.get("checks"), list):
+            for chk in rule.get("checks", []):
+                if not isinstance(chk, str):
+                    continue
+                s = chk.strip()
+                candidate = None
+                # pick tokens that look like paths
+                tokens = [t.strip(",. ") for t in s.split()]
+                # choose longest token containing '/' or '.' as a likely path
+                pathish = [t for t in tokens if ('/' in t) or ('.' in t)]
+                if pathish:
+                    candidate = max(pathish, key=len)
+                else:
+                    # common folders
+                    if "templates" in s:
+                        candidate = "templates"
+                    elif "static" in s:
+                        candidate = "static"
+                    elif "app.py" in s:
+                        candidate = "app.py"
+                if candidate:
+                    required_paths.append(candidate)
+        
+        # If nothing parsed, nothing to do
+        if not required_paths:
+            self.add_check(rule_name, True, points, "No structure paths specified")
+            return
+        
+        missing = []
+        for rel in required_paths:
+            path = self.project_path / rel
+            if not path.exists():
+                missing.append(rel)
+        
+        if not missing:
+            self.add_check(rule_name, True, points, f"All required paths exist: {required_paths}")
+        else:
+            self.add_check(rule_name, False, 0, f"Missing paths: {missing}")
 
     def _validate_requirements_rule(self, rule, points):
         """Validate requirements.txt rules."""

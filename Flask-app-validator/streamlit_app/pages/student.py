@@ -78,6 +78,12 @@ student_id = st.text_input("Enter Student ID:", value="student_001", help="Enter
 # --- Initialize validator ---
 task_validator = TaskValidator()
 
+# Ensure the validator uses the selected project's configuration JSON
+try:
+    task_validator.load_project_config(str(selected_project_path))
+except Exception as e:
+    st.error(f"Failed to load project configuration: {e}")
+
 # --- Load tasks from selected project ---
 all_tasks = project_data.get("tasks", [])
 if not all_tasks:
@@ -166,11 +172,16 @@ if current_task:
                         
                         with col_playwright:
                             if playwright_val.get('success'):
-                                st.success("Playwright tests passed")
+                                task_name = current_task.get('name', f'Task {current_task.get("id", "?")}')
+                                st.success(f"{task_name} passed")
                             elif playwright_val.get('message'):
-                                st.info(f"{playwright_val['message']}")
+                                # Extract the actual error from the message
+                                error_msg = playwright_val['message']
+                                if "UI test failed:" in error_msg:
+                                    error_msg = error_msg.replace("UI test failed: ", "")
+                                st.error(f"Task failed: {error_msg}")
                             else:
-                                st.warning("Playwright tests had issues")
+                                st.warning("Task validation had issues")
                     except:
                         st.write("Task completed (details unavailable)")
         else:
@@ -178,6 +189,11 @@ if current_task:
 
         st.markdown("**Requirements:**")
         validation = current_task.get("validation_rules", {})
+        
+        # Ensure validation is a dictionary, not a list
+        if isinstance(validation, list):
+            validation = {}
+        
         must_have_elements = validation.get("mustHaveElements", [])
         must_have_classes = validation.get("mustHaveClasses", [])
         must_have_inputs = validation.get("mustHaveInputs", [])
@@ -211,14 +227,22 @@ if current_task:
                         tmp = tempfile.mktemp(suffix=".zip")
                         with open(tmp, "wb") as f:
                             f.write(uploaded_file.getvalue())
-
+                        
+                        # Always reload the selected project configuration before validating
+                        try:
+                            task_validator.load_project_config(str(selected_project_path))
+                        except Exception:
+                            pass
+                        
                         result = task_validator.validate_task(current_task["id"], tmp, student_id)
                         if result.get("success"):
                             st.success(f"Validation completed! Score: {result['total_score']} / {result['max_score']}")
                             task_validator.update_student_progress(student_id, result, project_id)
                             st.rerun()
                         else:
-                            st.error(f"Validation failed: {result.get('error', 'Unknown error')}")
+                            # Show detailed error message if available
+                            error_msg = result.get('message') or result.get('error') or 'Unknown error'
+                            st.error(f"Validation failed: {error_msg}")
 
         with col_b:
             if st.button("Submit", key=f"submit_{current_task['id']}"):
@@ -242,7 +266,10 @@ for t in all_tasks:
         
         with col_status:
             st.write(f"**Description:** {t['description']}")
-            st.write(f"**Points:** {t.get('validation_rules', {}).get('points', 0)}")
+            validation_rules = t.get('validation_rules', {})
+            if isinstance(validation_rules, list):
+                validation_rules = {}
+            st.write(f"**Points:** {validation_rules.get('points', 0)}")
             
             if is_completed:
                 st.success("Task completed successfully!")
@@ -264,9 +291,14 @@ for t in all_tasks:
                             if static_val.get('success'):
                                 st.write("Static validation passed")
                             if playwright_val.get('success'):
-                                st.write("Playwright validation passed")
+                                task_name = t.get('name', f'Task {t.get("id", "?")}')
+                                st.write(f"{task_name} passed")
                             elif playwright_val.get('message'):
-                                st.write(f"Playwright: {playwright_val['message']}")
+                                # Extract the actual error from the message
+                                error_msg = playwright_val['message']
+                                if "UI test failed:" in error_msg:
+                                    error_msg = error_msg.replace("UI test failed: ", "")
+                                st.write(f"Task failed: {error_msg}")
                         except Exception as e:
                             st.write("Validation completed (details unavailable)")
         
@@ -289,9 +321,15 @@ for t in all_tasks:
                             screenshots = result_data.get('screenshots', [])
                             if screenshots:
                                 st.write("Screenshots captured:")
-                                for i, screenshot in enumerate(screenshots[:3]):  # Show first 3
-                                    if Path(screenshot).exists():
-                                        st.image(screenshot, caption=f"Screenshot {i+1}", width=200)
+                                for i, screenshot in enumerate(screenshots[:3]):
+                                    screenshot_path = Path(screenshot).resolve()
+                                    if screenshot_path.exists():
+                                        try:
+                                            st.image(str(screenshot_path), caption=f"Screenshot {i+1}", width=600)
+                                        except Exception as e:
+                                            st.write(f"Could not display screenshot {i+1}: {str(e)}")
+                                    else:
+                                        st.write(f"Screenshot {i+1} not found: {screenshot_path}")
                             
                             # Show validation timestamp
                             timestamp = result_data.get('timestamp', '')
@@ -310,6 +348,8 @@ for t in all_tasks:
             st.write(f"- {rf}")
 
         rules = t.get("validation_rules", {})
+        if isinstance(rules, list):
+            rules = {}
         if rules:
             st.write("**Validation Rules:**")
             if "mustHaveElements" in rules:
@@ -323,11 +363,11 @@ for t in all_tasks:
 
         pt = t.get("playwright_test", {})
         if pt:
-            st.write("**Playwright Test:**")
+            st.write("**UI Test:**")
             st.write(f"- Route: {pt.get('route', '/')}")
             st.write(f"- Points: {pt.get('points', 0)}")
             
-            # Show Playwright validation status
+            # Show UI test validation status
             if is_completed:
                 task_logs_dir = Path("Logs") / student_id / f"task_{t['id']}"
                 if task_logs_dir.exists():
@@ -340,10 +380,15 @@ for t in all_tasks:
                             playwright_val = result_data.get('playwright_validation', {})
                             
                             if playwright_val.get('success'):
-                                st.success("Playwright tests passed")
+                                task_name = t.get('name', f'Task {t.get("id", "?")}')
+                                st.success(f"{task_name} passed")
                             elif playwright_val.get('message'):
-                                st.info(f"Playwright: {playwright_val['message']}")
+                                # Extract the actual error from the message
+                                error_msg = playwright_val['message']
+                                if "UI test failed:" in error_msg:
+                                    error_msg = error_msg.replace("UI test failed: ", "")
+                                st.error(f"Task failed: {error_msg}")
                             else:
-                                st.warning("Playwright tests had issues")
+                                st.warning("Task validation had issues")
                         except:
                             pass
