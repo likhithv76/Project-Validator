@@ -90,7 +90,13 @@ class FlexibleFlaskValidator:
         if rules_file:
             self.rules_file = Path(rules_file)
         else:
-            self.rules_file = Path(__file__).parent / "defaultRules.json"
+            # Try to find rules in the new location first
+            new_rules_path = Path(__file__).parent.parent / "streamlit_app" / "rules" / "defaultRules.json"
+            if new_rules_path.exists():
+                self.rules_file = new_rules_path
+            else:
+                # Fallback to old location
+                self.rules_file = Path(__file__).parent / "defaultRules.json"
         self.json_rules = []
 
         # runtime process bookkeeping
@@ -108,6 +114,7 @@ class FlexibleFlaskValidator:
             "endpoints": [],
             "db_inspection": {},
             "crud_results": [],
+            "ui_tests": [],    # Playwright UI test results
             "summary": {}
         }
 
@@ -144,6 +151,8 @@ class FlexibleFlaskValidator:
             try:
                 if rule_type == "html":
                     self._validate_html_rule(rule, points)
+                elif rule_type == "structure":
+                    self._validate_structure_rule(rule, points)
                 elif rule_type == "requirements":
                     self._validate_requirements_rule(rule, points)
                 elif rule_type == "database":
@@ -173,12 +182,43 @@ class FlexibleFlaskValidator:
             with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
             
-            # Check required elements
+            # Check required elements (support simple CSS-like patterns like tag.class and tag[attr='value'])
             missing_elements = []
             if "mustHaveElements" in rule:
                 for element in rule["mustHaveElements"]:
-                    if f"<{element}" not in content:
-                        missing_elements.append(element)
+                    try:
+                        elem = str(element)
+                        found = False
+                        # Support tag.class pattern
+                        if "." in elem and not any(ch in elem for ch in "[]#"):
+                            tag, cls = elem.split(".", 1)
+                            pattern = rf"<\s*{re.escape(tag)}[^>]*class=[\"']([^\"']*)[\"']"
+                            for m in re.finditer(pattern, content):
+                                class_attr = m.group(1)
+                                if re.search(rf"(^|\s){re.escape(cls)}(\s|$)", class_attr):
+                                    found = True
+                                    break
+                        # Support tag[attr='value'] pattern
+                        elif "[" in elem and "]" in elem and elem.find("[") < elem.find("]"):
+                            tag = elem.split("[", 1)[0].strip()
+                            inside = elem.split("[", 1)[1].rsplit("]", 1)[0]
+                            if "=" in inside:
+                                attr, raw_val = inside.split("=", 1)
+                                attr = attr.strip()
+                                val = raw_val.strip().strip('"\'')
+                                pattern = rf"<\s*{re.escape(tag)}[^>]*{re.escape(attr)}\s*=\s*[\"']{re.escape(val)}[\"']"
+                                if re.search(pattern, content):
+                                    found = True
+                        else:
+                            # Simple tag presence check
+                            if f"<{elem}" in content:
+                                found = True
+                        if not found:
+                            missing_elements.append(element)
+                    except Exception:
+                        # Fall back to simple check on error
+                        if f"<{element}" not in content:
+                            missing_elements.append(element)
             
             # Check required classes
             missing_classes = []
@@ -188,10 +228,11 @@ class FlexibleFlaskValidator:
                     if not re.search(r'class=["\'][^"\']*\b' + re.escape(class_name) + r'\b', content):
                         missing_classes.append(class_name)
             
-            # Check required content
+            # Check required content (support alias mustContainText)
             missing_content = []
-            if "mustHaveContent" in rule:
-                for content_text in rule["mustHaveContent"]:
+            content_list = rule.get("mustHaveContent") or rule.get("mustContainText")
+            if content_list:
+                for content_text in content_list:
                     if content_text not in content:
                         missing_content.append(content_text)
             
@@ -260,6 +301,55 @@ class FlexibleFlaskValidator:
                 
         except Exception as e:
             self.add_check(rule_name, False, 0, f"Error reading template: {e}")
+
+    def _validate_structure_rule(self, rule, points):
+        """Validate project structure (files/folders existence)."""
+        rule_name = "Structure: required paths exist"
+        required_paths = []
+        
+        # Preferred explicit list
+        if isinstance(rule.get("paths"), list):
+            required_paths.extend([str(p) for p in rule.get("paths", [])])
+        
+        # Heuristic from "checks" like "templates/base.html exists" or "templates folder exists"
+        if not required_paths and isinstance(rule.get("checks"), list):
+            for chk in rule.get("checks", []):
+                if not isinstance(chk, str):
+                    continue
+                s = chk.strip()
+                candidate = None
+                # pick tokens that look like paths
+                tokens = [t.strip(",. ") for t in s.split()]
+                # choose longest token containing '/' or '.' as a likely path
+                pathish = [t for t in tokens if ('/' in t) or ('.' in t)]
+                if pathish:
+                    candidate = max(pathish, key=len)
+                else:
+                    # common folders
+                    if "templates" in s:
+                        candidate = "templates"
+                    elif "static" in s:
+                        candidate = "static"
+                    elif "app.py" in s:
+                        candidate = "app.py"
+                if candidate:
+                    required_paths.append(candidate)
+        
+        # If nothing parsed, nothing to do
+        if not required_paths:
+            self.add_check(rule_name, True, points, "No structure paths specified")
+            return
+        
+        missing = []
+        for rel in required_paths:
+            path = self.project_path / rel
+            if not path.exists():
+                missing.append(rel)
+        
+        if not missing:
+            self.add_check(rule_name, True, points, f"All required paths exist: {required_paths}")
+        else:
+            self.add_check(rule_name, False, 0, f"Missing paths: {missing}")
 
     def _validate_requirements_rule(self, rule, points):
         """Validate requirements.txt rules."""
@@ -648,7 +738,9 @@ class FlexibleFlaskValidator:
             self.log("No main app file to run.", level="ERROR")
             return False
 
-        cmd = [sys.executable, str(self.main_app_file)]
+        # Use just the filename since we're running from the project directory
+        main_app_filename = self.main_app_file.name if hasattr(self.main_app_file, 'name') else str(self.main_app_file)
+        cmd = [sys.executable, main_app_filename]
         self.log(f"Starting student's app subprocess: {' '.join(cmd)} (cwd={self.project_path})")
         try:
             self.proc = subprocess.Popen(
@@ -934,6 +1026,151 @@ class FlexibleFlaskValidator:
                 })
         return results
 
+    # -------------------- UI Testing with Playwright --------------------
+    def run_ui_tests(self, host=None, port=None):
+        """
+        Run Playwright UI tests on the Flask application using rule-based validation.
+        Returns list of test results.
+        """
+        try:
+            # Import the new PlaywrightUIRunner
+            try:
+                from .playwright_runner import PlaywrightUIRunner
+            except ImportError:
+                try:
+                    # Try absolute import if relative import fails
+                    from validator.playwright_runner import PlaywrightUIRunner
+                except ImportError:
+                    # Fallback for when running as standalone
+                    import sys
+                    from pathlib import Path
+                    sys.path.append(str(Path(__file__).parent))
+                    from playwright_runner import PlaywrightUIRunner
+            import asyncio
+            
+            host = host or self.DEFAULT_HOST
+            port = port or self.DEFAULT_PORT
+            base_url = f"http://{host}:{port}"
+            
+            self.log("Starting rule-based Playwright UI tests...")
+            
+            # Check if rules file contains UI tests
+            rules_file = self.rules_file or "streamlit_app/rules/defaultRules.json"
+            if not os.path.exists(rules_file):
+                self.log(f"Rules file not found: {rules_file}", level="WARN")
+                return []
+            
+            # Load rules to check for UI tests
+            with open(rules_file, 'r', encoding='utf-8') as f:
+                rules_data = json.load(f)
+            
+            ui_tests = rules_data.get("ui_tests", [])
+            if not ui_tests:
+                self.log("No UI tests found in rules file", level="INFO")
+                return []
+            
+            self.log(f"Found {len(ui_tests)} UI test routes in rules file")
+            
+            # Run UI validation using the new runner
+            runner = PlaywrightUIRunner(base_url)
+            
+            # Handle Windows event loop policy
+            import platform
+            if platform.system() == "Windows":
+                try:
+                    # Set Windows-specific event loop policy
+                    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+                except Exception as e:
+                    self.log(f"Could not set Windows event loop policy: {e}", level="WARN")
+            
+            results = asyncio.run(runner.run_ui_validation(rules_file))
+            
+            if results:
+                # Get summary
+                summary = runner.get_summary()
+                total_tests = summary["total_tests"]
+                passed_tests = summary["passed_tests"]
+                failed_tests = summary["failed_tests"]
+                earned_points = summary["earned_points"]
+                total_points = summary["total_points"]
+                
+                self.log(f"UI Tests completed: {passed_tests}/{total_tests} passed ({earned_points}/{total_points} points)")
+                
+                # Add individual test results as validation checks
+                for result in results:
+                    test_name = result.get("test", "Unknown Test")
+                    route = result.get("route", "")
+                    status = result.get("status", "UNKNOWN")
+                    duration = result.get("duration", 0.0)
+                    error = result.get("error", "")
+                    points = result.get("points", 0)
+                    
+                    passed = status == "PASS"
+                    message = f"Route: {route} | Duration: {duration:.2f}s"
+                    if error:
+                        message += f" | Error: {error}"
+                    
+                    self.add_check(f"UI Test: {test_name}", passed, points, message)
+                
+                return results
+            else:
+                self.log("No UI test results returned", level="WARN")
+                return []
+                
+        except ImportError as e:
+            self.log(f"Playwright not available: {e}", level="WARN")
+            return []
+        except NotImplementedError as e:
+            self.log(f"Playwright not supported on this platform: {e}", level="WARN")
+            return []
+        except Exception as e:
+            self.log(f"Error running UI tests: {e}", level="ERROR")
+            return []
+    
+    def _start_playwright_backend(self):
+        """Start the Playwright backend server in a subprocess."""
+        try:
+            import subprocess
+            import sys
+            from pathlib import Path
+            
+            # Get the path to the playwright backend
+            backend_dir = Path(__file__).parent.parent / "playwright_backend"
+            startup_script = backend_dir / "start_server.py"
+            
+            if not startup_script.exists():
+                self.log(f"Playwright backend startup script not found at {startup_script}", level="ERROR")
+                return False
+            
+            # Start the backend server using the startup script
+            cmd = [sys.executable, str(startup_script)]
+            
+            # Use Windows-specific subprocess creation
+            import platform
+            if platform.system() == "Windows":
+                # Use CREATE_NEW_PROCESS_GROUP on Windows to avoid subprocess issues
+                subprocess.Popen(
+                    cmd,
+                    cwd=str(backend_dir),
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
+                )
+            else:
+                subprocess.Popen(
+                    cmd,
+                    cwd=str(backend_dir),
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL
+                )
+            
+            self.log("Playwright backend started")
+            return True
+            
+        except Exception as e:
+            self.log(f"Failed to start Playwright backend: {e}", level="ERROR")
+            return False
+
     # -------------------- Syntax checks --------------------
     def validate_syntax(self):
         """Offline syntax and code completeness check with flake8 (optional)."""
@@ -1038,6 +1275,10 @@ class FlexibleFlaskValidator:
         # CRUD tests
         crud_results = self.perform_crud_tests(endpoints, host=host, port=port)
         self.run_log["crud_results"] = crud_results
+
+        # UI Tests with Playwright
+        ui_test_results = self.run_ui_tests(host=host, port=port)
+        self.run_log["ui_tests"] = ui_test_results
 
         # finalize (stop app, write logs)
         self._finalize_run()
@@ -1237,7 +1478,8 @@ def run_flexible_validation(project_path: str, host: str = None, port: int = Non
         "json_file": str(validator.json_file),
         "errors": validator.errors,
         "warnings": validator.warnings,
-        "validation_results": validator.validation_results
+        "validation_results": validator.validation_results,
+        "ui_tests": validator.run_log.get("ui_tests", [])
     }
 
 

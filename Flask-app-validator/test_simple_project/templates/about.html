@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}About - Simple Flask App{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h1>About This Project</h1>
+        <p>This is a simple Flask application created for testing the project validation system.</p>
+        
+        <h3>Technologies Used</h3>
+        <ul>
+            <li>Flask - Python web framework</li>
+            <li>Bootstrap 5 - CSS framework</li>
+            <li>Jinja2 - Template engine</li>
+        </ul>
+        
+        <h3>Features</h3>
+        <ul>
+            <li>Multiple routes and templates</li>
+            <li>Form handling with flash messages</li>
+            <li>API endpoints for data access</li>
+            <li>Responsive design</li>
+        </ul>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Project Info</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Version:</strong> 1.0.0</p>
+                <p><strong>Created:</strong> 2024</p>
+                <p><strong>Purpose:</strong> Testing</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Flask Test App{% endblock %}
+
+{% block content %}
+<h2>Welcome to Flask Test App</h2>
+<p>This is a test application for Playwright UI validation.</p>
+
+<div class="user_profile">
+    <h3>Welcome to our application!</h3>
+    <p>Please register or login to continue.</p>
+</div>
+
+<div>
+    <a href="{{ url_for('register') }}" class="btn">Register</a>
+    <a href="{{ url_for('login') }}" class="btn">Login</a>
+</div>
+{% endblock %}

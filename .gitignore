@@ -5,3 +5,7 @@ venv/
 .vscode/
 .pytest_cache/
 *Logs/
+node_modules/
+__pycache__/
+flask-app-validator/Logs/
+flask-app-validator/projects/

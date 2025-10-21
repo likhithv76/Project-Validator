@@ -1,0 +1,318 @@
+{
+  "rules": [
+    {
+      "type": "html",
+      "file": "templates/base.html",
+      "mustHaveElements": ["nav", "footer"],
+      "mustHaveClasses": ["navbar", "container"],
+      "mustHaveContent": ["Welcome"],
+      "mustHaveInputs": [],
+      "points": 10
+    }
+  ],
+  "ui_tests": [
+    {
+      "route": "/register",
+      "page_title": "Register",
+      "description": "Test user registration functionality",
+      "test_cases": [
+        {
+          "name": "Valid Registration",
+          "description": "Test successful user registration with valid data",
+          "identifiers": [
+            {
+              "identifier_type": "class",
+              "identifier_name": "register_form_username",
+              "type": "short_text",
+              "input_value": "test_user_123",
+              "required": true
+            },
+            {
+              "identifier_type": "class", 
+              "identifier_name": "register_form_email",
+              "type": "email",
+              "input_value": "test@example.com",
+              "required": true
+            },
+            {
+              "identifier_type": "class",
+              "identifier_name": "register_form_password",
+              "type": "password",
+              "input_value": "StrongPass123!",
+              "required": true
+            },
+            {
+              "identifier_type": "class",
+              "identifier_name": "register_form_confirm_password",
+              "type": "password", 
+              "input_value": "StrongPass123!",
+              "required": true
+            },
+            {
+              "identifier_type": "class",
+              "identifier_name": "register_form_submit_button",
+              "type": "button",
+              "action": "click"
+            }
+          ],
+          "expected_result": {
+            "type": "redirect",
+            "url_contains": "/login",
+            "success_message": "Registration successful"
+          },
+          "timeout": 10,
+          "points": 15
+        },
+        {
+          "name": "Weak Password Rejection",
+          "description": "Test that weak passwords are rejected",
+          "identifiers": [
+            {
+              "identifier_type": "class",
+              "identifier_name": "register_form_username",
+              "type": "short_text",
+              "input_value": "weak_user"
+            },
+            {
+              "identifier_type": "class",
+              "identifier_name": "register_form_password",
+              "type": "password",
+              "input_value": "12345"
+            },
+            {
+              "identifier_type": "class",
+              "identifier_name": "register_form_submit_button",
+              "type": "button",
+              "action": "click"
+            }
+          ],
+          "expected_result": {
+            "type": "error",
+            "error_contains": "password too short",
+            "stay_on_page": true
+          },
+          "timeout": 5,
+          "points": 10
+        },
+        {
+          "name": "Duplicate Username Rejection",
+          "description": "Test that duplicate usernames are rejected",
+          "identifiers": [
+            {
+              "identifier_type": "class",
+              "identifier_name": "register_form_username",
+              "type": "short_text",
+              "input_value": "existing_user"
+            },
+            {
+              "identifier_type": "class",
+              "identifier_name": "register_form_password",
+              "type": "password",
+              "input_value": "ValidPass123!"
+            },
+            {
+              "identifier_type": "class",
+              "identifier_name": "register_form_submit_button",
+              "type": "button",
+              "action": "click"
+            }
+          ],
+          "expected_result": {
+            "type": "error",
+            "error_contains": "username already exists",
+            "stay_on_page": true
+          },
+          "timeout": 5,
+          "points": 10
+        }
+      ]
+    },
+    {
+      "route": "/login",
+      "page_title": "Login",
+      "description": "Test user authentication functionality",
+      "test_cases": [
+        {
+          "name": "Valid Login",
+          "description": "Test successful login with valid credentials",
+          "identifiers": [
+            {
+              "identifier_type": "class",
+              "identifier_name": "login_username",
+              "type": "short_text",
+              "input_value": "test_user_123"
+            },
+            {
+              "identifier_type": "class",
+              "identifier_name": "login_password",
+              "type": "password",
+              "input_value": "StrongPass123!"
+            },
+            {
+              "identifier_type": "class",
+              "identifier_name": "login_submit",
+              "type": "button",
+              "action": "click"
+            }
+          ],
+          "expected_result": {
+            "type": "redirect",
+            "url_contains": "/dashboard",
+            "success_message": "Login successful"
+          },
+          "timeout": 10,
+          "points": 15
+        },
+        {
+          "name": "Invalid Credentials",
+          "description": "Test login failure with invalid credentials",
+          "identifiers": [
+            {
+              "identifier_type": "class",
+              "identifier_name": "login_username",
+              "type": "short_text",
+              "input_value": "wrong_user"
+            },
+            {
+              "identifier_type": "class",
+              "identifier_name": "login_password",
+              "type": "password",
+              "input_value": "wrong_password"
+            },
+            {
+              "identifier_type": "class",
+              "identifier_name": "login_submit",
+              "type": "button",
+              "action": "click"
+            }
+          ],
+          "expected_result": {
+            "type": "error",
+            "error_contains": "invalid credentials",
+            "stay_on_page": true
+          },
+          "timeout": 5,
+          "points": 10
+        },
+        {
+          "name": "Empty Fields Validation",
+          "description": "Test that empty fields are handled properly",
+          "identifiers": [
+            {
+              "identifier_type": "class",
+              "identifier_name": "login_username",
+              "type": "short_text",
+              "input_value": ""
+            },
+            {
+              "identifier_type": "class",
+              "identifier_name": "login_password",
+              "type": "password",
+              "input_value": ""
+            },
+            {
+              "identifier_type": "class",
+              "identifier_name": "login_submit",
+              "type": "button",
+              "action": "click"
+            }
+          ],
+          "expected_result": {
+            "type": "error",
+            "error_contains": "required",
+            "stay_on_page": true
+          },
+          "timeout": 5,
+          "points": 5
+        }
+      ]
+    },
+    {
+      "route": "/dashboard",
+      "page_title": "Dashboard",
+      "description": "Test dashboard functionality and user session",
+      "test_cases": [
+        {
+          "name": "Dashboard Load Test",
+          "description": "Test that dashboard loads with required elements",
+          "actions": [
+            {
+              "identifier_type": "text",
+              "identifier_name": "Welcome",
+              "check_type": "exists",
+              "description": "Welcome message should be present"
+            },
+            {
+              "identifier_type": "class",
+              "identifier_name": "logout_button",
+              "check_type": "exists",
+              "description": "Logout button should be present"
+            },
+            {
+              "identifier_type": "class",
+              "identifier_name": "user_profile",
+              "check_type": "exists",
+              "description": "User profile section should be present"
+            }
+          ],
+          "expected_result": {
+            "type": "success",
+            "all_elements_present": true
+          },
+          "timeout": 5,
+          "points": 10
+        },
+        {
+          "name": "Logout Functionality",
+          "description": "Test that logout works correctly",
+          "actions": [
+            {
+              "identifier_type": "class",
+              "identifier_name": "logout_button",
+              "check_type": "click",
+              "description": "Click logout button"
+            }
+          ],
+          "expected_result": {
+            "type": "redirect",
+            "url_contains": "/login",
+            "success_message": "Logged out successfully"
+          },
+          "timeout": 5,
+          "points": 10
+        }
+      ]
+    },
+    {
+      "route": "/profile",
+      "page_title": "Profile",
+      "description": "Test user profile management",
+      "test_cases": [
+        {
+          "name": "Profile Page Load",
+          "description": "Test that profile page loads correctly",
+          "actions": [
+            {
+              "identifier_type": "class",
+              "identifier_name": "profile_form",
+              "check_type": "exists",
+              "description": "Profile form should be present"
+            },
+            {
+              "identifier_type": "class",
+              "identifier_name": "update_button",
+              "check_type": "exists",
+              "description": "Update button should be present"
+            }
+          ],
+          "expected_result": {
+            "type": "success",
+            "all_elements_present": true
+          },
+          "timeout": 5,
+          "points": 5
+        }
+      ]
+    }
+  ]
+}

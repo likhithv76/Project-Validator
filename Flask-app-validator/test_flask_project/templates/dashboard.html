@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Flask Test App{% endblock %}
+
+{% block content %}
+<h2>Welcome to your Dashboard, {{ username }}!</h2>
+
+<div class="user_profile">
+    <h3>User Profile</h3>
+    <p>Username: {{ username }}</p>
+    <p>Email: user@example.com</p>
+</div>
+
+<div>
+    <a href="{{ url_for('profile') }}" class="btn">View Profile</a>
+    <a href="{{ url_for('logout') }}" class="btn logout_button">Logout</a>
+</div>
+
+<div style="margin-top: 2rem;">
+    <h3>Dashboard Content</h3>
+    <p>This is your personal dashboard where you can manage your account.</p>
+</div>
+{% endblock %}

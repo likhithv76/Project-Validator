@@ -1,0 +1,155 @@
+{
+  "project": "Simple Flask Test",
+  "description": "A simple Flask application for testing project validation and progress isolation",
+  "tasks": [
+    {
+      "id": 1,
+      "name": "Basic Flask Setup",
+      "description": "Create a basic Flask application with proper structure",
+      "required_files": ["app.py", "requirements.txt"],
+      "validation_rules": {
+        "type": "python",
+        "file": "app.py",
+        "points": 20,
+        "mustHaveImports": ["Flask", "render_template"],
+        "mustHaveRoutes": ["/", "/about", "/contact"],
+        "mustHaveMethods": ["GET", "POST"]
+      },
+      "playwright_test": {
+        "route": "/",
+        "actions": [
+          {
+            "selector_type": "tag",
+            "selector_value": "h1",
+            "click": true
+          }
+        ],
+        "validate": [
+          {
+            "type": "text_present",
+            "value": "Welcome to Simple Flask App"
+          }
+        ],
+        "points": 15
+      },
+      "unlock_condition": {
+        "min_score": 0,
+        "required_tasks": []
+      }
+    },
+    {
+      "id": 2,
+      "name": "Template System",
+      "description": "Implement Jinja2 templates with base template and inheritance",
+      "required_files": ["templates/base.html", "templates/index.html", "templates/about.html"],
+      "validation_rules": {
+        "type": "html",
+        "file": "templates/base.html",
+        "points": 25,
+        "mustHaveElements": ["html", "head", "body", "nav"],
+        "mustHaveClasses": ["navbar", "container"],
+        "mustHaveContent": ["Simple Flask App"]
+      },
+      "playwright_test": {
+        "route": "/about",
+        "actions": [
+          {
+            "selector_type": "tag",
+            "selector_value": "a",
+            "click": true
+          }
+        ],
+        "validate": [
+          {
+            "type": "text_present",
+            "value": "About This Project"
+          }
+        ],
+        "points": 20
+      },
+      "unlock_condition": {
+        "min_score": 15,
+        "required_tasks": [1]
+      }
+    },
+    {
+      "id": 3,
+      "name": "Form Handling",
+      "description": "Implement contact form with POST method and flash messages",
+      "required_files": ["templates/contact.html"],
+      "validation_rules": {
+        "type": "html",
+        "file": "templates/contact.html",
+        "points": 20,
+        "mustHaveElements": ["form", "input", "textarea", "button"],
+        "mustHaveInputs": ["name", "email", "message"],
+        "mustHaveContent": ["Contact Us", "Send Message"]
+      },
+      "playwright_test": {
+        "route": "/contact",
+        "actions": [
+          {
+            "selector_type": "name",
+            "selector_value": "name",
+            "input_variants": ["Test User"]
+          },
+          {
+            "selector_type": "name",
+            "selector_value": "email",
+            "input_variants": ["test@example.com"]
+          },
+          {
+            "selector_type": "name",
+            "selector_value": "message",
+            "input_variants": ["This is a test message"]
+          },
+          {
+            "selector_type": "tag",
+            "selector_value": "button",
+            "click": true
+          }
+        ],
+        "validate": [
+          {
+            "type": "text_present",
+            "value": "Thank you"
+          }
+        ],
+        "points": 25
+      },
+      "unlock_condition": {
+        "min_score": 20,
+        "required_tasks": [2]
+      }
+    },
+    {
+      "id": 4,
+      "name": "API Endpoints",
+      "description": "Create REST API endpoints for data access",
+      "required_files": ["app.py"],
+      "validation_rules": {
+        "type": "python",
+        "file": "app.py",
+        "points": 15,
+        "mustHaveRoutes": ["/api/users"],
+        "mustHaveImports": ["jsonify"],
+        "mustHaveMethods": ["GET"]
+      },
+      "playwright_test": {
+        "route": "/api/users",
+        "actions": [],
+        "validate": [
+          {
+            "type": "json_valid",
+            "value": "users"
+          }
+        ],
+        "points": 10
+      },
+      "unlock_condition": {
+        "min_score": 15,
+        "required_tasks": [3]
+      }
+    }
+  ]
+}
