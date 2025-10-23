@@ -12,37 +12,73 @@ from gemini_generator import GeminiTestCaseGenerator
 
 # Helper functions for Playwright preview
 def check_playwright_backend():
-    """Check if Playwright backend is running."""
     try:
         response = requests.get("http://127.0.0.1:8001/health", timeout=2)
         return response.status_code == 200
     except:
         return False
 
-def run_task_preview(project_data, tmp_dir):
-    """Run Playwright tests on all tasks."""
+def run_comprehensive_task_verification(project_data, tmp_dir):
+    """
+    Comprehensive task verification that combines preview testing and reference screenshot capture.
+    Creates detailed logs for each project and task analysis.
+    """
     try:
-        # Start Flask app in background
         flask_process = start_flask_app(tmp_dir)
-        time.sleep(3)  # Wait for Flask to start
+        time.sleep(3)
         
-        # Run tests for each task
-        results = []
+        # Create comprehensive verification results
+        verification_results = {
+            "project_name": project_data.get("project", "Unknown Project"),
+            "project_description": project_data.get("description", ""),
+            "verification_timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "total_tasks": len(project_data.get("tasks", [])),
+            "tasks": [],
+            "summary": {
+                "total_tests": 0,
+                "passed_tests": 0,
+                "failed_tests": 0,
+                "screenshots_captured": 0,
+                "errors": []
+            }
+        }
+        
+        # Process each task comprehensively
         for task in project_data.get("tasks", []):
-            task_result = run_single_task_test(task, tmp_dir)
-            results.append(task_result)
+            task_analysis = analyze_task_comprehensively(task, tmp_dir)
+            verification_results["tasks"].append(task_analysis)
+            
+            # Update summary
+            verification_results["summary"]["total_tests"] += 1
+            if task_analysis["test_status"] == "PASS":
+                verification_results["summary"]["passed_tests"] += 1
+            elif task_analysis["test_status"] == "FAIL":
+                verification_results["summary"]["failed_tests"] += 1
+            
+            if task_analysis["screenshot_captured"]:
+                verification_results["summary"]["screenshots_captured"] += 1
         
         # Stop Flask app
         if flask_process:
             flask_process.terminate()
         
-        return results
+        # Save comprehensive log
+        save_verification_log(verification_results, tmp_dir)
+        
+        return verification_results
+        
     except Exception as e:
-        st.error(f"Preview failed: {str(e)}")
-        return []
+        error_msg = f"Comprehensive verification failed: {str(e)}"
+        st.error(error_msg)
+        return {
+            "project_name": project_data.get("project", "Unknown Project"),
+            "verification_timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "error": error_msg,
+            "tasks": [],
+            "summary": {"total_tests": 0, "passed_tests": 0, "failed_tests": 0, "screenshots_captured": 0, "errors": [error_msg]}
+        }
 
 def start_flask_app(tmp_dir):
-    """Start Flask app in background."""
     try:
         # Find app.py in the extracted project
         app_py = os.path.join(tmp_dir, "app.py")
@@ -63,26 +99,134 @@ def start_flask_app(tmp_dir):
         st.error(f"Failed to start Flask app: {e}")
     return None
 
-def run_single_task_test(task, tmp_dir):
-    """Run Playwright test for a single task."""
+def analyze_task_comprehensively(task, tmp_dir):
+    """
+    Comprehensive analysis of a single task including testing and screenshot capture.
+    Returns detailed analysis with logs.
+    """
+    task_id = task.get("id", "unknown")
+    task_name = task.get("name", "Unnamed Task")
+    
+    analysis = {
+        "task_id": task_id,
+        "task_name": task_name,
+        "task_description": task.get("description", ""),
+        "analysis_timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "configuration_analysis": {},
+        "test_status": "SKIP",
+        "test_message": "",
+        "test_details": {},
+        "screenshot_captured": False,
+        "screenshot_path": None,
+        "validation_results": [],
+        "playwright_logs": [],
+        "errors": []
+    }
+    
+    try:
+        # Analyze task configuration
+        analysis["configuration_analysis"] = analyze_task_configuration(task)
+        
+        playwright_test = task.get("playwright_test", {})
+        route = playwright_test.get("route", "")
+        
+        if not route:
+            analysis["test_status"] = "SKIP"
+            analysis["test_message"] = "No route configured for UI testing"
+            analysis["errors"].append("Missing route configuration")
+            return analysis
+        
+        # Run comprehensive test (both validation and screenshot capture)
+        test_result = run_comprehensive_task_test(task, tmp_dir)
+        
+        analysis["test_status"] = test_result["status"]
+        analysis["test_message"] = test_result["message"]
+        analysis["test_details"] = test_result.get("details", {})
+        analysis["validation_results"] = test_result.get("validation_results", [])
+        analysis["playwright_logs"] = test_result.get("logs", [])
+        
+        if test_result.get("screenshot"):
+            analysis["screenshot_captured"] = True
+            analysis["screenshot_path"] = test_result["screenshot"]
+        
+        if test_result.get("error"):
+            analysis["errors"].append(test_result["error"])
+            
+    except Exception as e:
+        analysis["test_status"] = "ERROR"
+        analysis["test_message"] = f"Analysis failed: {str(e)}"
+        analysis["errors"].append(str(e))
+    
+    return analysis
+
+def analyze_task_configuration(task):
+    """Analyze task configuration for completeness and validity."""
+    config_analysis = {
+        "required_files": task.get("required_files", []),
+        "validation_rules": task.get("validation_rules", {}),
+        "playwright_test": task.get("playwright_test", {}),
+        "unlock_condition": task.get("unlock_condition", {}),
+        "completeness_score": 0,
+        "issues": [],
+        "recommendations": []
+    }
+    
+    # Check required files
+    required_files = config_analysis["required_files"]
+    if not required_files:
+        config_analysis["issues"].append("No required files specified")
+    else:
+        config_analysis["completeness_score"] += 20
+    
+    # Check validation rules
+    validation_rules = config_analysis["validation_rules"]
+    if not validation_rules.get("type"):
+        config_analysis["issues"].append("Validation type not specified")
+    else:
+        config_analysis["completeness_score"] += 20
+    
+    if not validation_rules.get("file"):
+        config_analysis["issues"].append("Validation file not specified")
+    else:
+        config_analysis["completeness_score"] += 20
+    
+    # Check playwright test
+    playwright_test = config_analysis["playwright_test"]
+    if not playwright_test.get("route"):
+        config_analysis["issues"].append("Playwright route not configured")
+    else:
+        config_analysis["completeness_score"] += 20
+    
+    if not playwright_test.get("actions"):
+        config_analysis["recommendations"].append("Consider adding UI actions for better testing")
+    else:
+        config_analysis["completeness_score"] += 10
+    
+    if not playwright_test.get("validate"):
+        config_analysis["recommendations"].append("Consider adding validation rules for UI testing")
+    else:
+        config_analysis["completeness_score"] += 10
+    
+    return config_analysis
+
+def run_comprehensive_task_test(task, tmp_dir):
+    """Run comprehensive test for a single task (validation + screenshot)."""
     try:
         playwright_test = task.get("playwright_test", {})
         route = playwright_test.get("route", "")
         
         if not route:
             return {
-                "task_id": task["id"],
-                "task_name": task["name"],
                 "status": "SKIP",
                 "message": "No route configured",
                 "screenshot": None
             }
         
-        # Prepare test data
+        # Prepare comprehensive test data
         test_data = {
             "base_url": "http://127.0.0.1:5000",
             "test_suite": "custom",
-            "project_name": f"task_{task['id']}",
+            "project_name": f"comprehensive_task_{task['id']}",
             "timeout": 30,
             "headless": True,
             "capture_screenshots": True,
@@ -90,11 +234,12 @@ def run_single_task_test(task, tmp_dir):
                 "task_id": task["id"],
                 "route": route,
                 "actions": playwright_test.get("actions", []),
-                "validate": playwright_test.get("validate", [])
+                "validate": playwright_test.get("validate", []),
+                "comprehensive_test": True  # Flag for comprehensive testing
             }
         }
         
-        # Call Playwright backend
+        # Call Playwright backend for comprehensive test
         response = requests.post(
             "http://127.0.0.1:8001/run-custom-task-test",
             json=test_data,
@@ -104,29 +249,27 @@ def run_single_task_test(task, tmp_dir):
         if response.status_code == 200:
             result = response.json()
             return {
-                "task_id": task["id"],
-                "task_name": task["name"],
                 "status": "PASS" if result["failed_tests"] == 0 else "FAIL",
-                "message": f"Tests: {result['passed_tests']}/{result['total_tests']} passed",
+                "message": f"Comprehensive test: {result['passed_tests']}/{result['total_tests']} passed",
                 "screenshot": result["screenshots"][0] if result["screenshots"] else None,
-                "details": result
+                "details": result,
+                "validation_results": result.get("results", []),
+                "logs": result.get("logs", [])
             }
         else:
             return {
-                "task_id": task["id"],
-                "task_name": task["name"],
                 "status": "ERROR",
                 "message": f"Backend error: {response.status_code}",
-                "screenshot": None
+                "screenshot": None,
+                "error": f"HTTP {response.status_code}"
             }
             
     except Exception as e:
         return {
-            "task_id": task["id"],
-            "task_name": task["name"],
             "status": "ERROR",
             "message": str(e),
-            "screenshot": None
+            "screenshot": None,
+            "error": str(e)
         }
 
 def capture_reference_screenshots(project_data, tmp_dir):
@@ -223,22 +366,173 @@ def display_preview_results(results):
                 except:
                     st.write("📸 Screenshot captured")
 
-def display_reference_screenshots(screenshots):
-    """Display reference screenshots."""
-    st.markdown("#### Reference Screenshots")
+def save_verification_log(verification_results, tmp_dir):
+    """Save comprehensive verification log to file."""
+    try:
+        # Create logs directory
+        logs_dir = Path("Logs")
+        logs_dir.mkdir(exist_ok=True)
+        
+        # Create project-specific log directory
+        project_name = verification_results["project_name"].replace(" ", "_").lower()
+        project_log_dir = logs_dir / project_name
+        project_log_dir.mkdir(exist_ok=True)
+        
+        # Generate log filename with timestamp
+        timestamp = verification_results["verification_timestamp"].replace(":", "-").replace(" ", "_")
+        log_filename = f"comprehensive_verification_{timestamp}.json"
+        log_path = project_log_dir / log_filename
+        
+        # Save comprehensive log
+        with open(log_path, "w", encoding="utf-8") as f:
+            json.dump(verification_results, f, indent=2)
+        
+        # Also save a human-readable summary
+        summary_filename = f"verification_summary_{timestamp}.txt"
+        summary_path = project_log_dir / summary_filename
+        
+        with open(summary_path, "w", encoding="utf-8") as f:
+            f.write(f"COMPREHENSIVE TASK VERIFICATION REPORT\n")
+            f.write(f"=====================================\n\n")
+            f.write(f"Project: {verification_results['project_name']}\n")
+            f.write(f"Description: {verification_results['project_description']}\n")
+            f.write(f"Verification Time: {verification_results['verification_timestamp']}\n")
+            f.write(f"Total Tasks: {verification_results['total_tasks']}\n\n")
+            
+            f.write(f"SUMMARY\n")
+            f.write(f"-------\n")
+            f.write(f"Total Tests: {verification_results['summary']['total_tests']}\n")
+            f.write(f"Passed Tests: {verification_results['summary']['passed_tests']}\n")
+            f.write(f"Failed Tests: {verification_results['summary']['failed_tests']}\n")
+            f.write(f"Screenshots Captured: {verification_results['summary']['screenshots_captured']}\n")
+            
+            if verification_results['summary']['errors']:
+                f.write(f"Errors: {len(verification_results['summary']['errors'])}\n")
+            
+            f.write(f"\nDETAILED TASK ANALYSIS\n")
+            f.write(f"=====================\n\n")
+            
+            for task in verification_results['tasks']:
+                f.write(f"Task {task['task_id']}: {task['task_name']}\n")
+                f.write(f"  Description: {task['task_description']}\n")
+                f.write(f"  Test Status: {task['test_status']}\n")
+                f.write(f"  Test Message: {task['test_message']}\n")
+                f.write(f"  Screenshot Captured: {'Yes' if task['screenshot_captured'] else 'No'}\n")
+                
+                config_analysis = task['configuration_analysis']
+                f.write(f"  Configuration Score: {config_analysis['completeness_score']}/100\n")
+                
+                # Required files
+                required_files = config_analysis.get('required_files', [])
+                f.write(f"  Required Files: {', '.join(required_files) if required_files else 'None'}\n")
+                
+                # Validation rules
+                validation_rules = config_analysis.get('validation_rules', {})
+                f.write(f"  Validation Type: {validation_rules.get('type', 'Not specified')}\n")
+                f.write(f"  Validation File: {validation_rules.get('file', 'Not specified')}\n")
+                f.write(f"  Validation Points: {validation_rules.get('points', 'Not specified')}\n")
+                
+                # Playwright test
+                playwright_test = config_analysis.get('playwright_test', {})
+                f.write(f"  Playwright Route: {playwright_test.get('route', 'Not specified')}\n")
+                f.write(f"  Playwright Actions: {len(playwright_test.get('actions', []))}\n")
+                f.write(f"  Playwright Validations: {len(playwright_test.get('validate', []))}\n")
+                f.write(f"  Playwright Points: {playwright_test.get('points', 'Not specified')}\n")
+                
+                if config_analysis['issues']:
+                    f.write(f"  Issues:\n")
+                    for issue in config_analysis['issues']:
+                        f.write(f"    - {issue}\n")
+                
+                if config_analysis['recommendations']:
+                    f.write(f"  Recommendations:\n")
+                    for rec in config_analysis['r   ecommendations']:
+                        f.write(f"    - {rec}\n")
+                
+                if task.get('validation_results'):
+                    f.write(f"  Validation Results:\n")
+                    for validation in task['validation_results']:
+                        if isinstance(validation, dict):
+                            status = "PASS" if validation.get('passed', False) else "FAIL"
+                            f.write(f"    - {status}: {validation.get('rule', 'Unknown rule')}\n")
+                            f.write(f"      {validation.get('message', '')}\n")
+                
+                if task.get('playwright_logs'):
+                    f.write(f"  Playwright Execution Logs:\n")
+                    for log_entry in task['playwright_logs']:
+                        f.write(f"    {log_entry}\n")
+                
+                if task['errors']:
+                    f.write(f"  Errors:\n")
+                    for error in task['errors']:
+                        f.write(f"    - {error}\n")
+                
+                f.write(f"\n")
+        
+        st.success(f"Comprehensive verification log saved to: {log_path}")
+        st.info(f"Summary report saved to: {summary_path}")
+        
+    except Exception as e:
+        st.error(f"Failed to save verification log: {str(e)}")
+
+def display_comprehensive_verification_results(verification_results):
+    st.markdown("#### Comprehensive Task Verification Results")
     
-    for screenshot_info in screenshots:
-        with st.expander(f"Task {screenshot_info['task_id']}: {screenshot_info['task_name']} ({screenshot_info['route']})"):
-            if screenshot_info["screenshot"]:
-                st.write("📸 Reference screenshot captured")
-                # Display screenshot if available
-                try:
-                    # This would need to be implemented based on how screenshots are stored
-                    st.write("Screenshot data available")
-                except:
-                    st.write("Screenshot captured successfully")
+    # Summary metrics
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Total Tasks", verification_results["total_tasks"])
+    with col2:
+        st.metric("Passed Tests", verification_results["summary"]["passed_tests"])
+    with col3:
+        st.metric("Failed Tests", verification_results["summary"]["failed_tests"])
+    with col4:
+        st.metric("Screenshots", verification_results["summary"]["screenshots_captured"])
+    
+    # Project information
+    st.markdown("**Project Information:**")
+    st.write(f"**Name:** {verification_results['project_name']}")
+    st.write(f"**Description:** {verification_results['project_description']}")
+    st.write(f"**Verification Time:** {verification_results['verification_timestamp']}")
+    
+    # Overall status
+    if verification_results["summary"]["failed_tests"] == 0:
+        st.success("All tasks passed verification!")
+    else:
+        st.warning(f"{verification_results['summary']['failed_tests']} tasks failed verification")
+    
+    # Simplified task results
+    st.markdown("---")
+    st.markdown("#### Task Summary")
+    
+    for task in verification_results["tasks"]:
+        col_status, col_info, col_score = st.columns([1, 3, 1])
+        
+        with col_status:
+            if task["test_status"] == "PASS":
+                st.success("PASS")
+            elif task["test_status"] == "FAIL":
+                st.error("FAIL")
+            elif task["test_status"] == "SKIP":
+                st.warning("SKIP")
             else:
-                st.warning("No screenshot captured")
+                st.error("ERROR")
+        
+        with col_info:
+            st.write(f"**Task {task['task_id']}:** {task['task_name']}")
+            st.write(f"*{task['test_message']}*")
+            if task["screenshot_captured"]:
+                st.write("Screenshot captured")
+        
+        with col_score:
+            config_analysis = task["configuration_analysis"]
+            st.metric("Score", f"{config_analysis['completeness_score']}/100")
+    
+    if verification_results["summary"]["errors"]:
+        st.markdown("---")
+        st.markdown("#### Errors")
+        for error in verification_results["summary"]["errors"]:
+            st.error(f"• {error}")
 
 st.set_page_config(page_title="Creator Portal", layout="wide")
 
@@ -379,24 +673,19 @@ if uploaded_zip:
             st.markdown("---")
             st.markdown("### Tasks Configuration")
             
-            # Tasks Editor
             for i, task in enumerate(project_data["tasks"]):
                 with st.expander(f"Task {task['id']}: {task['name']}", expanded=False):
-                    # Add delete button at the top of each task
                     col_task_header, col_delete = st.columns([4, 1])
                     with col_delete:
-                        if st.button("🗑️ Delete", key=f"delete_task_{i}", help="Delete this task"):
+                        if st.button("Delete", key=f"delete_task_{i}", help="Delete this task"):
                             project_data["tasks"].pop(i)
                             st.session_state.generated_json = project_data
                             st.rerun()
-                    # Basic task info
                     new_name = st.text_input(f"Task Name", value=task["name"], key=f"task_name_{i}")
                     new_description = st.text_area(f"Description", value=task["description"], key=f"task_desc_{i}")
                     
-                    # Required files - use multi-select
                     st.markdown("**Required Files:**")
                     
-                    # Get available files from the project (if available)
                     available_files = [
                         "app.py", "requirements.txt", "templates/base.html", 
                         "templates/index.html", "templates/about.html", 
@@ -406,7 +695,6 @@ if uploaded_zip:
                         "static/css/style.css", "static/js/script.js", "static/images/logo.png"
                     ]
                     
-                    # Add any files from the current task that aren't in the list
                     current_files = task.get("required_files", [])
                     for file in current_files:
                         if file not in available_files:
@@ -420,7 +708,6 @@ if uploaded_zip:
                         help="Select the files that students must include in their project"
                     )
                     
-                    # Update task data only if changed
                     if new_name != task["name"]:
                         task["name"] = new_name
                     if new_description != task["description"]:
@@ -428,11 +715,9 @@ if uploaded_zip:
                     if selected_files != current_files:
                         task["required_files"] = selected_files
                     
-                    # Validation Rules - populate from analysis
                     st.markdown("**Validation Rules:**")
                     validation_rules = task.get("validation_rules", {})
                     
-                    # Ensure validation_rules is a dictionary, not a list
                     if isinstance(validation_rules, list):
                         validation_rules = {}
                     
@@ -718,39 +1003,25 @@ if uploaded_zip:
                     
                     st.divider()
             
-            # Task Preview and Validation Section
+            # Comprehensive Task Verification Section
             st.markdown("---")
-            st.markdown("### Task Preview & Validation")
-            st.info("🚀 Test your tasks with Playwright to ensure they work correctly before saving!")
+            st.markdown("### Comprehensive Task Verification")
             
             # Check if Playwright backend is available
             playwright_available = check_playwright_backend()
             
             if playwright_available:
-                col_preview, col_validation = st.columns([1, 1])
+                if st.button("Run Comprehensive Verification", use_container_width=True, type="primary"):
+                    with st.spinner("Running comprehensive task verification..."):
+                        verification_results = run_comprehensive_task_verification(project_data, tmp_dir)
+                        st.session_state.comprehensive_verification_results = verification_results
+                        st.success("Comprehensive verification completed!")
                 
-                with col_preview:
-                    if st.button("🔍 Preview All Tasks", use_container_width=True, type="primary"):
-                        with st.spinner("Running Playwright tests..."):
-                            results = run_task_preview(project_data, tmp_dir)
-                            st.session_state.preview_results = results
-                
-                with col_validation:
-                    if st.button("📸 Capture Reference Screenshots", use_container_width=True):
-                        with st.spinner("Capturing reference screenshots..."):
-                            screenshots = capture_reference_screenshots(project_data, tmp_dir)
-                            st.session_state.reference_screenshots = screenshots
-                            st.success(f"Captured {len(screenshots)} reference screenshots!")
-                
-                # Display preview results
-                if hasattr(st.session_state, 'preview_results') and st.session_state.preview_results:
-                    display_preview_results(st.session_state.preview_results)
-                
-                # Display reference screenshots
-                if hasattr(st.session_state, 'reference_screenshots') and st.session_state.reference_screenshots:
-                    display_reference_screenshots(st.session_state.reference_screenshots)
+                # Display comprehensive verification results
+                if hasattr(st.session_state, 'comprehensive_verification_results') and st.session_state.comprehensive_verification_results:
+                    display_comprehensive_verification_results(st.session_state.comprehensive_verification_results)
             else:
-                st.warning("⚠️ Playwright backend not available. Start the backend server to enable task preview.")
+                st.warning("Playwright backend not available. Start the backend server to enable comprehensive verification.")
                 st.code("python playwright_backend/start_server.py", language="bash")
             
             # Add new task button

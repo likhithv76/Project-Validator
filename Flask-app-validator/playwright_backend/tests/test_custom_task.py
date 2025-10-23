@@ -13,20 +13,28 @@ async def test_custom_task(page: Page, base_url: str, task_config: dict = None):
         route = task_config.get("route", "/")
         actions = task_config.get("actions", [])
         validate = task_config.get("validate", [])
+        comprehensive_test = task_config.get("comprehensive_test", False)
         
         # Navigate to the route
         full_url = f"{base_url}{route}" if not route.startswith("http") else route
         await page.goto(full_url, timeout=10000)
         
         # Take initial screenshot
-        await page.screenshot(path="initial_page.png")
+        initial_screenshot = f"initial_task_{task_config.get('task_id', 'unknown')}.png"
+        await page.screenshot(path=initial_screenshot)
         
         # Execute actions
-        for action in actions:
-            await execute_action(page, action)
+        action_logs = []
+        for i, action in enumerate(actions):
+            try:
+                await execute_action(page, action)
+                action_logs.append(f"Action {i+1} executed successfully: {action}")
+            except Exception as e:
+                action_logs.append(f"Action {i+1} failed: {str(e)}")
         
         # Take final screenshot after actions
-        await page.screenshot(path="after_actions.png")
+        final_screenshot = f"final_task_{task_config.get('task_id', 'unknown')}.png"
+        await page.screenshot(path=final_screenshot)
         
         # Validate results
         validation_results = []
@@ -34,18 +42,38 @@ async def test_custom_task(page: Page, base_url: str, task_config: dict = None):
             result = await validate_rule(page, validation_rule)
             validation_results.append(result)
         
-        # Return results
-        return {
-            "status": "PASS" if all(r["passed"] for r in validation_results) else "FAIL",
+        # For comprehensive testing, also capture reference screenshot
+        reference_screenshot = None
+        if comprehensive_test:
+            reference_screenshot = f"reference_task_{task_config.get('task_id', 'unknown')}.png"
+            await page.screenshot(path=reference_screenshot)
+        
+        # Determine overall status
+        all_validations_passed = all(r.get("passed", False) for r in validation_results)
+        status = "PASS" if all_validations_passed else "FAIL"
+        
+        # Return comprehensive results
+        result = {
+            "status": status,
             "validation_results": validation_results,
-            "screenshots": ["initial_page.png", "after_actions.png"]
+            "screenshots": [initial_screenshot, final_screenshot],
+            "action_logs": action_logs,
+            "comprehensive_test": comprehensive_test
         }
+        
+        if reference_screenshot:
+            result["screenshots"].append(reference_screenshot)
+            result["reference_screenshot"] = reference_screenshot
+        
+        return result
         
     except Exception as e:
         return {
             "status": "ERROR",
             "error": str(e),
-            "screenshots": []
+            "screenshots": [],
+            "validation_results": [],
+            "action_logs": [f"Test execution failed: {str(e)}"]
         }
 
 async def execute_action(page: Page, action: dict):
@@ -95,10 +123,15 @@ async def execute_action(page: Page, action: dict):
     # Add small delay between actions
     await page.wait_for_timeout(500)
 
-async def validate_rule(page: Page, rule: dict):
+async def validate_rule(page: Page, rule):
     """Validate a single rule on the page."""
-    rule_type = rule.get("type", "unknown")
-    rule_value = rule.get("value", "")
+    # Handle both dict and string rules
+    if isinstance(rule, str):
+        rule_type = "text_present"
+        rule_value = rule
+    else:
+        rule_type = rule.get("type", "text_present")
+        rule_value = rule.get("value", "")
     
     try:
         if rule_type == "text_present":

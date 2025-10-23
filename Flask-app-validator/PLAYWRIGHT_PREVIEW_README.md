@@ -200,3 +200,5 @@ Runs a custom task test with provided configuration.
 5. **Visual Feedback**: Screenshots help understand test execution
 
 This system ensures that creators can confidently publish well-tested tasks that will work correctly for students.
+
+

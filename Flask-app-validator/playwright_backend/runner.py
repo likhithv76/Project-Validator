@@ -56,7 +56,9 @@ class PlaywrightTestRunner:
             project_results_dir = self.results_dir / project_name
             project_results_dir.mkdir(parents=True, exist_ok=True)
             
-            await self._launch_browser(headless=headless)
+            # Initialize browser if not already done
+            if not self.playwright or not self.browser:
+                await self._launch_browser(headless=headless)
             
             # Import custom task test
             from tests.test_custom_task import test_custom_task, test_screenshot_capture
@@ -79,18 +81,23 @@ class PlaywrightTestRunner:
                 "status": result.get("status", "UNKNOWN"),
                 "duration": time.time() - start_time,
                 "error": result.get("error"),
-                "screenshot": result.get("screenshot"),
-                "validation_results": result.get("validation_results", [])
+                "screenshot": result.get("reference_screenshot") or result.get("screenshot"),
+                "validation_results": result.get("validation_results", []),
+                "action_logs": result.get("action_logs", []),
+                "comprehensive_test": result.get("comprehensive_test", False)
             }
             
             results.append(test_result)
             
             # Save screenshots if captured
             if capture_screenshots and result.get("screenshots"):
+                screenshots_dir = project_results_dir / "screenshots"
+                screenshots_dir.mkdir(exist_ok=True)
+                
                 for i, screenshot in enumerate(result["screenshots"]):
                     if screenshot and os.path.exists(screenshot):
                         # Move screenshot to results directory
-                        new_path = project_results_dir / f"screenshot_{i}.png"
+                        new_path = screenshots_dir / f"screenshot_{i}.png"
                         os.rename(screenshot, new_path)
                         test_result[f"screenshot_{i}"] = str(new_path)
             
@@ -105,8 +112,8 @@ class PlaywrightTestRunner:
                 "error": str(e)
             })
         
-        finally:
-            await self._cleanup()
+        # Don't cleanup browser here - let it stay alive for multiple tests
+        # await self._cleanup()
         
         return results
 
