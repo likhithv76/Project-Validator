@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flask Project Validator</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="style.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                Flask Project Validator
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#home" data-page="home">
+                            <i class="bi bi-house me-1"></i>Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#creator" data-page="creator">
+                            <i class="bi bi-tools me-1"></i>Creator Portal
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#student" data-page="student">
+                            <i class="bi bi-person-check me-1"></i>Student Portal
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container-fluid">
+        <!-- Home Page -->
+        <div id="home-page" class="page active">
+            <div class="row justify-content-center">
+                <div class="col-lg-8 col-xl-6">
+                    <div class="text-center py-5">
+                        <div class="header-section">
+                            <h1 class="display-4 fw-bold text-primary mb-3">
+                                <i class="bi bi-check-circle-fill me-3"></i>
+                                Flask Project Validator
+                            </h1>
+                            <p class="lead text-muted mb-5">Choose your workspace below</p>
+                        </div>
+                        
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="card h-100 shadow-sm border-0">
+                                    <div class="card-body text-center p-4">
+                                        <div class="mb-3">
+                                            <i class="bi bi-tools text-primary" style="font-size: 3rem;"></i>
+                                        </div>
+                                        <h4 class="card-title">Creator Portal</h4>
+                                        <p class="card-text text-muted">
+                                            Upload projects, generate testcases, and configure validation tasks for your students.
+                                        </p>
+                                        <button class="btn btn-primary btn-lg" onclick="showPage('creator')">
+                                            <i class="bi bi-arrow-right me-2"></i>Go to Creator Portal
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="card h-100 shadow-sm border-0">
+                                    <div class="card-body text-center p-4">
+                                        <div class="mb-3">
+                                            <i class="bi bi-person-check text-success" style="font-size: 3rem;"></i>
+                                        </div>
+                                        <h4 class="card-title">Student Portal</h4>
+                                        <p class="card-text text-muted">
+                                            Upload your project submissions and get instant validation feedback.
+                                        </p>
+                                        <button class="btn btn-success btn-lg" onclick="showPage('student')">
+                                            <i class="bi bi-arrow-right me-2"></i>Go to Student Portal
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Creator Portal -->
+        <div id="creator-page" class="page">
+            <div class="row">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2 class="mb-0">
+                            <i class="bi bi-tools me-2"></i>Creator Portal
+                        </h2>
+                        <button class="btn btn-outline-secondary" onclick="showPage('home')">
+                            <i class="bi bi-arrow-left me-1"></i>Back to Home
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Upload Section -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-cloud-upload me-2"></i>Upload Base Project ZIP
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <input type="file" class="form-control" id="projectZip" accept=".zip">
+                                <div class="form-text">Upload a ZIP file containing your Flask project structure</div>
+                            </div>
+                            <button class="btn btn-primary" onclick="uploadProject()">
+                                <i class="bi bi-upload me-2"></i>Upload Project
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Analysis and Configuration -->
+            <div id="project-analysis" class="row" style="display: none;">
+                <div class="col-lg-4">
+                    <!-- File Structure -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-folder me-2"></i>Project File Structure
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="file-tree" class="file-tree">
+                                <!-- File tree will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Auto-generate Testcases -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-gear me-2"></i>Auto-generate Testcases
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Generation Method</label>
+                                <select class="form-select" id="generationMethod">
+                                    <option value="AI">AI (Gemini) - Recommended</option>
+                                    <option value="PARSER">Parser-based Fallback</option>
+                                </select>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-success" onclick="generateTestcases()">
+                                    <i class="bi bi-magic me-2"></i>Generate Testcases
+                                </button>
+                                <button class="btn btn-primary" onclick="runComprehensiveVerification()">
+                                    <i class="bi bi-clipboard-check me-2"></i>Run Comprehensive Verification
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <!-- Task Configuration -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-list-task me-2"></i>Task Configuration
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="task-configuration">
+                                <div class="text-center text-muted py-4">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    Upload a project and generate testcases to configure tasks
+                                </div>
+                            </div>
+                            
+                            <!-- Comprehensive Verification Results -->
+                            <div id="comprehensive-results" class="mt-4" style="display: none;">
+                                <!-- Comprehensive verification results will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <!-- Code Preview -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-code-square me-2"></i>Code Preview
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="code-preview" class="code-preview">
+                                <div class="text-center text-muted py-4">
+                                    <i class="bi bi-file-earmark-code me-2"></i>
+                                    Click a file to preview its content
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Portal -->
+        <div id="student-page" class="page">
+            <div class="row">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2 class="mb-0">
+                            <i class="bi bi-person-check me-2"></i>Student Task Validator
+                        </h2>
+                        <div>
+                            <button class="btn btn-outline-secondary me-2" onclick="refreshProjects()">
+                                <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="showPage('home')">
+                                <i class="bi bi-arrow-left me-1"></i>Back to Home
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Selection -->
+            <div class="row mb-4">
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-folder me-2"></i>Select Project
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Available Projects</label>
+                                <select class="form-select" id="projectSelect">
+                                    <option value="">Loading projects...</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Student ID</label>
+                                <input type="text" class="form-control" id="studentId" value="student_001" placeholder="Enter your student ID">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-graph-up me-2"></i>Your Progress
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-3">
+                                    <div class="metric">
+                                        <div class="metric-value" id="completedTasks">0</div>
+                                        <div class="metric-label">Completed</div>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="metric">
+                                        <div class="metric-value" id="currentTask">1</div>
+                                        <div class="metric-label">Current</div>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="metric">
+                                        <div class="metric-value" id="totalScore">0</div>
+                                        <div class="metric-label">Score</div>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="metric">
+                                        <div class="metric-value" id="lastUpdated">-</div>
+                                        <div class="metric-label">Updated</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Task -->
+            <div id="current-task-section" class="row mb-4" style="display: none;">
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-check-circle me-2"></i>Current Task
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="current-task-content">
+                                <!-- Current task content will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-cloud-upload me-2"></i>Upload Your Project
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <input type="file" class="form-control" id="studentZip" accept=".zip">
+                                <div class="form-text">Upload your project ZIP file</div>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-primary" onclick="validateSubmission()">
+                                    <i class="bi bi-check-circle me-2"></i>Validate
+                                </button>
+                                <button class="btn btn-success" onclick="submitTask()">
+                                    <i class="bi bi-send me-2"></i>Submit
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="reuploadProject()">
+                                    <i class="bi bi-arrow-clockwise me-2"></i>Re-upload
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- All Tasks -->
+            <div id="all-tasks-section" class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-list-task me-2"></i>All Tasks
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="all-tasks-content">
+                                <!-- All tasks will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+
+    <!-- Alert Container -->
+    <div id="alert-container" class="position-fixed top-0 end-0 p-3" style="z-index: 1050;"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="script.js"></script>
+</body>
+</html>
