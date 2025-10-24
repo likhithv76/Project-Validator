@@ -113,6 +113,14 @@ Each task represents a stage of the student's work — from setup verification t
 Project Name: {project_name}
 Project Description: {description}
 
+### Creator Context
+The following description is provided by the project creator. 
+Use this context to understand the project's purpose, complexity, and functionality before designing tasks.
+
+Creator Description: {description}
+
+Incorporate this understanding into task descriptions and scoring, ensuring each task reflects the project's intent.
+
 ### Project File Structure
 ```
 app.py

@@ -10,6 +10,432 @@ import time
 sys.path.append(str(Path(__file__).parent.parent))
 from gemini_generator import GeminiTestCaseGenerator
 
+# Helper functions for project management
+def load_existing_projects():
+    """Load all existing projects from the projects directory."""
+    projects = []
+    projects_dir = Path("projects")
+    
+    if not projects_dir.exists():
+        return projects
+    
+    # Look for configuration JSON files
+    for config_file in projects_dir.glob("*_configuration.json"):
+        try:
+            with open(config_file, "r", encoding="utf-8") as f:
+                project_data = json.load(f)
+                project_data["config_file"] = str(config_file)
+                project_data["name"] = project_data.get("project", config_file.stem.replace("_configuration", ""))
+                projects.append(project_data)
+        except Exception as e:
+            st.error(f"Error loading project {config_file}: {e}")
+    
+    return projects
+
+def display_project_details(project, project_idx):
+    """Display detailed project information with CRUD operations."""
+    st.markdown("---")
+    st.markdown(f"#### 📋 {project['name']}")
+    
+    # Project metadata
+    col_meta1, col_meta2, col_meta3 = st.columns(3)
+    with col_meta1:
+        st.metric("Total Tasks", len(project.get('tasks', [])))
+    with col_meta2:
+        total_points = sum(
+            task.get('validation_rules', {}).get('points', 0) + 
+            task.get('playwright_test', {}).get('points', 0)
+            for task in project.get('tasks', [])
+        )
+        st.metric("Total Points", total_points)
+    with col_meta3:
+        st.metric("Config File", project.get('config_file', 'Unknown').split('/')[-1])
+    
+    # Project description
+    if project.get('description'):
+        st.markdown(f"**Description:** {project['description']}")
+    
+    # Creator prompt if available
+    if project.get('creator_prompt'):
+        with st.expander("Creator's Original Prompt", expanded=False):
+            st.text(project['creator_prompt'])
+    
+    # CRUD Operations
+    st.markdown("#### Project Operations")
+    col_edit, col_delete, col_export = st.columns(3)
+    
+    with col_edit:
+        if st.button("Edit Project", key=f"edit_project_{project_idx}"):
+            st.session_state.editing_project = project
+            st.session_state.editing_project_idx = project_idx
+            st.rerun()
+    
+    with col_delete:
+        if st.button("Delete Project", key=f"delete_project_{project_idx}", type="secondary"):
+            st.session_state.confirm_delete_project = project_idx
+    
+    with col_export:
+        if st.button("Export Project", key=f"export_project_{project_idx}"):
+            export_project(project)
+    
+    # Handle delete confirmation
+    if hasattr(st.session_state, 'confirm_delete_project') and st.session_state.confirm_delete_project == project_idx:
+        st.warning("Are you sure you want to delete this project?")
+        col_confirm, col_cancel = st.columns(2)
+        with col_confirm:
+            if st.button("Yes, Delete", key=f"confirm_delete_{project_idx}", type="primary"):
+                delete_project(project_idx)
+                st.success("Project deleted successfully!")
+                st.rerun()
+        with col_cancel:
+            if st.button("Cancel", key=f"cancel_delete_{project_idx}"):
+                del st.session_state.confirm_delete_project
+                st.rerun()
+    
+    # Task management
+    st.markdown("#### Task Management")
+    tasks = project.get('tasks', [])
+    
+    if tasks:
+        for i, task in enumerate(tasks):
+            with st.expander(f"Task {task['id']}: {task['name']}", expanded=False):
+                col_task_info, col_task_actions = st.columns([3, 1])
+                
+                with col_task_info:
+                    st.write(f"**Description:** {task.get('description', 'No description')}")
+                    st.write(f"**Required Files:** {', '.join(task.get('required_files', []))}")
+                    
+                    # Validation rules
+                    validation_rules = task.get('validation_rules', {})
+                    if validation_rules:
+                        st.write(f"**Validation:** {validation_rules.get('type', 'Unknown')} ({validation_rules.get('points', 0)} pts)")
+                    
+                    # UI test
+                    playwright_test = task.get('playwright_test', {})
+                    if playwright_test:
+                        st.write(f"**UI Test:** {playwright_test.get('route', 'No route')} ({playwright_test.get('points', 0)} pts)")
+                    
+                    # Unlock condition
+                    unlock_condition = task.get('unlock_condition', {})
+                    if unlock_condition:
+                        min_score = unlock_condition.get('min_score', 0)
+                        required_tasks = unlock_condition.get('required_tasks', [])
+                        st.write(f"**Unlock:** Min score {min_score}, Required tasks: {required_tasks}")
+                
+                with col_task_actions:
+                    if st.button("Edit", key=f"pm_edit_task_{i}", help="Edit task"):
+                        st.session_state.editing_task = task
+                        st.session_state.editing_task_idx = i
+                        st.session_state.editing_task_project_idx = project_idx
+                    
+                    if st.button("Delete", key=f"pm_delete_task_{i}", help="Delete task"):
+                        st.session_state.confirm_delete_task = (project_idx, i)
+        
+        # Handle task delete confirmation
+        if hasattr(st.session_state, 'confirm_delete_task'):
+            project_idx_del, task_idx_del = st.session_state.confirm_delete_task
+            st.warning(f"Delete task {tasks[task_idx_del]['id']}: {tasks[task_idx_del]['name']}?")
+            col_confirm, col_cancel = st.columns(2)
+            with col_confirm:
+                if st.button("Yes, Delete Task", key=f"pm_confirm_delete_task_{task_idx_del}", type="primary"):
+                    delete_task(project_idx_del, task_idx_del)
+                    st.success("Task deleted successfully!")
+                    st.rerun()
+            with col_cancel:
+                if st.button("Cancel", key=f"pm_cancel_delete_task_{task_idx_del}"):
+                    del st.session_state.confirm_delete_task
+                    st.rerun()
+    else:
+        st.info("No tasks found in this project.")
+
+def export_project(project):
+    """Export project configuration as downloadable JSON."""
+    json_str = json.dumps(project, indent=2)
+    st.download_button(
+        label="Download Project Configuration",
+        data=json_str,
+        file_name=f"{project['name'].replace(' ', '_')}_configuration.json",
+        mime="application/json"
+    )
+
+def delete_project(project_idx):
+    """Delete a project and its associated files."""
+    try:
+        projects = load_existing_projects()
+        if project_idx < len(projects):
+            project = projects[project_idx]
+            config_file = Path(project['config_file'])
+            
+            # Delete configuration file
+            if config_file.exists():
+                config_file.unlink()
+            
+            # Try to delete associated package directory
+            project_name = project['name'].replace(' ', '_').lower()
+            package_dir = Path("projects") / f"{project_name}_package"
+            if package_dir.exists():
+                import shutil
+                shutil.rmtree(package_dir)
+            
+            # Try to delete package ZIP
+            package_zip = Path("projects") / f"{project_name}_package.zip"
+            if package_zip.exists():
+                package_zip.unlink()
+            
+            st.success(f"Project '{project['name']}' deleted successfully!")
+            
+    except Exception as e:
+        st.error(f"Error deleting project: {e}")
+
+def delete_task(project_idx, task_idx):
+    """Delete a task from a project."""
+    try:
+        projects = load_existing_projects()
+        if project_idx < len(projects):
+            project = projects[project_idx]
+            tasks = project.get('tasks', [])
+            
+            if task_idx < len(tasks):
+                deleted_task = tasks.pop(task_idx)
+                
+                # Update task IDs to maintain sequence
+                for i, task in enumerate(tasks):
+                    task['id'] = i + 1
+                
+                # Save updated project
+                config_file = Path(project['config_file'])
+                with open(config_file, 'w', encoding='utf-8') as f:
+                    json.dump(project, f, indent=2)
+                
+                st.success(f"Task '{deleted_task['name']}' deleted successfully!")
+                
+    except Exception as e:
+        st.error(f"Error deleting task: {e}")
+
+def display_project_editor(project, project_idx):
+    """Display project editing interface."""
+    st.markdown("---")
+    st.markdown("#### Edit Project")
+    
+    # Project basic info editing
+    col_name, col_desc = st.columns(2)
+    with col_name:
+        new_name = st.text_input("Project Name", value=project.get('project', ''), key=f"edit_name_{project_idx}")
+    with col_desc:
+        new_description = st.text_area("Project Description", value=project.get('description', ''), key=f"edit_desc_{project_idx}")
+    
+    # Update project if changed
+    if new_name != project.get('project', '') or new_description != project.get('description', ''):
+        project['project'] = new_name
+        project['description'] = new_description
+        save_project(project)
+    
+    # Task editing
+    st.markdown("#### Edit Tasks")
+    tasks = project.get('tasks', [])
+    
+    for i, task in enumerate(tasks):
+        with st.expander(f"Edit Task {task['id']}: {task['name']}", expanded=False):
+            col_task_name, col_task_desc = st.columns(2)
+            
+            with col_task_name:
+                new_task_name = st.text_input("Task Name", value=task.get('name', ''), key=f"edit_task_name_{i}")
+            with col_task_desc:
+                new_task_desc = st.text_area("Task Description", value=task.get('description', ''), key=f"edit_task_desc_{i}")
+            
+            # Required files
+            current_files = task.get('required_files', [])
+            available_files = [
+                "app.py", "requirements.txt", "templates/base.html", 
+                "templates/index.html", "templates/about.html", 
+                "templates/contact.html", "templates/login.html",
+                "templates/register.html", "templates/dashboard.html",
+                "static/style.css", "static/script.js", "main.py", 
+                "run.py", "config.py", "models.py", "views.py"
+            ]
+            
+            for file in current_files:
+                if file not in available_files:
+                    available_files.append(file)
+            
+            new_required_files = st.multiselect(
+                "Required Files",
+                options=available_files,
+                default=current_files,
+                key=f"edit_required_files_{i}"
+            )
+            
+            # Validation rules
+            st.markdown("**Validation Rules:**")
+            validation_rules = task.get('validation_rules', {})
+            
+            col_val_type, col_val_points = st.columns(2)
+            with col_val_type:
+                val_type = st.selectbox(
+                    "Validation Type",
+                    ["structure", "html", "css", "js", "python", "requirements"],
+                    index=["structure", "html", "css", "js", "python", "requirements"].index(validation_rules.get('type', 'structure')),
+                    key=f"edit_val_type_{i}"
+                )
+            with col_val_points:
+                val_points = st.number_input(
+                    "Validation Points",
+                    min_value=1,
+                    max_value=100,
+                    value=validation_rules.get('points', 10),
+                    key=f"edit_val_points_{i}"
+                )
+            
+            val_file = st.text_input(
+                "Validation File",
+                value=validation_rules.get('file', ''),
+                key=f"edit_val_file_{i}"
+            )
+            
+            # UI Test
+            st.markdown("**UI Test:**")
+            playwright_test = task.get('playwright_test', {})
+            
+            col_ui_route, col_ui_points = st.columns(2)
+            with col_ui_route:
+                ui_route = st.text_input(
+                    "Route",
+                    value=playwright_test.get('route', ''),
+                    key=f"edit_ui_route_{i}"
+                )
+            with col_ui_points:
+                ui_points = st.number_input(
+                    "UI Test Points",
+                    min_value=1,
+                    max_value=100,
+                    value=playwright_test.get('points', 10),
+                    key=f"edit_ui_points_{i}"
+                )
+            
+            # Unlock condition
+            st.markdown("**Unlock Condition:**")
+            unlock_condition = task.get('unlock_condition', {})
+            
+            col_unlock_score, col_unlock_tasks = st.columns(2)
+            with col_unlock_score:
+                unlock_score = st.number_input(
+                    "Minimum Score",
+                    min_value=0,
+                    max_value=100,
+                    value=unlock_condition.get('min_score', 0),
+                    key=f"edit_unlock_score_{i}"
+                )
+            with col_unlock_tasks:
+                available_task_ids = [str(t['id']) for t in tasks if t['id'] != task['id']]
+                current_required_tasks = unlock_condition.get('required_tasks', [])
+                required_tasks_text = ", ".join(map(str, current_required_tasks))
+                unlock_tasks = st.text_input(
+                    "Required Tasks (comma-separated IDs)",
+                    value=required_tasks_text,
+                    key=f"edit_unlock_tasks_{i}"
+                )
+            
+            # Save task changes
+            if st.button("Save Task Changes", key=f"save_task_{i}"):
+                # Update task
+                task['name'] = new_task_name
+                task['description'] = new_task_desc
+                task['required_files'] = new_required_files
+                
+                # Update validation rules
+                task['validation_rules'] = {
+                    'type': val_type,
+                    'points': val_points,
+                    'file': val_file
+                }
+                
+                # Update UI test
+                task['playwright_test'] = {
+                    'route': ui_route,
+                    'points': ui_points,
+                    'actions': playwright_test.get('actions', []),
+                    'validate': playwright_test.get('validate', [])
+                }
+                
+                # Update unlock condition
+                try:
+                    required_tasks_list = [int(x.strip()) for x in unlock_tasks.split(",") if x.strip()]
+                except ValueError:
+                    required_tasks_list = current_required_tasks
+                
+                task['unlock_condition'] = {
+                    'min_score': unlock_score,
+                    'required_tasks': required_tasks_list
+                }
+                
+                # Save project
+                save_project(project)
+                st.success(f"Task '{new_task_name}' updated successfully!")
+                st.rerun()
+    
+    # Add new task
+    st.markdown("#### Add New Task")
+    with st.expander("Add New Task", expanded=False):
+        new_task_name = st.text_input("New Task Name", key=f"new_task_name_{project_idx}")
+        new_task_desc = st.text_area("New Task Description", key=f"new_task_desc_{project_idx}")
+        
+        col_new_val_type, col_new_val_points = st.columns(2)
+        with col_new_val_type:
+            new_val_type = st.selectbox("Validation Type", ["structure", "html", "css", "js", "python"], key=f"new_val_type_{project_idx}")
+        with col_new_val_points:
+            new_val_points = st.number_input("Validation Points", min_value=1, max_value=100, value=10, key=f"new_val_points_{project_idx}")
+        
+        new_val_file = st.text_input("Validation File", key=f"new_val_file_{project_idx}")
+        new_ui_route = st.text_input("UI Test Route", key=f"new_ui_route_{project_idx}")
+        new_ui_points = st.number_input("UI Test Points", min_value=1, max_value=100, value=10, key=f"new_ui_points_{project_idx}")
+        
+        if st.button("Add Task", key=f"add_task_{project_idx}"):
+            if new_task_name:
+                new_task_id = max([t['id'] for t in tasks], default=0) + 1
+                new_task = {
+                    'id': new_task_id,
+                    'name': new_task_name,
+                    'description': new_task_desc,
+                    'required_files': [],
+                    'validation_rules': {
+                        'type': new_val_type,
+                        'points': new_val_points,
+                        'file': new_val_file
+                    },
+                    'playwright_test': {
+                        'route': new_ui_route,
+                        'points': new_ui_points,
+                        'actions': [],
+                        'validate': []
+                    },
+                    'unlock_condition': {
+                        'min_score': 0,
+                        'required_tasks': []
+                    }
+                }
+                
+                tasks.append(new_task)
+                save_project(project)
+                st.success(f"Task '{new_task_name}' added successfully!")
+                st.rerun()
+            else:
+                st.error("Please provide a task name.")
+    
+    # Close editor
+    if st.button("Close Editor", key=f"close_editor_{project_idx}"):
+        del st.session_state.editing_project
+        del st.session_state.editing_project_idx
+        st.rerun()
+
+def save_project(project):
+    """Save project to its configuration file."""
+    try:
+        config_file = Path(project['config_file'])
+        with open(config_file, 'w', encoding='utf-8') as f:
+            json.dump(project, f, indent=2)
+    except Exception as e:
+        st.error(f"Error saving project: {e}")
+
 # Helper functions for Playwright preview
 def check_playwright_backend():
     try:
@@ -345,13 +771,13 @@ def display_preview_results(results):
         
         with col_status:
             if result["status"] == "PASS":
-                st.success("✅ PASS")
+                st.success("PASS")
             elif result["status"] == "FAIL":
-                st.error("❌ FAIL")
+                st.error("FAIL")
             elif result["status"] == "SKIP":
-                st.warning("⏭️ SKIP")
+                st.warning("SKIP")
             else:
-                st.error("💥 ERROR")
+                st.error("ERROR")
         
         with col_info:
             st.write(f"**Task {result['task_id']}:** {result['task_name']}")
@@ -558,9 +984,9 @@ if uploaded_zip:
         st.error("The uploaded ZIP appears to be corrupted or incomplete. Please re-upload a valid ZIP file.")
         st.stop()
 
-    col_left, col_right = st.columns([0.5, 0.5])
+    col_left, col_right = st.columns([0.4, 0.6])
 
-    # ---------------------- LEFT PANEL ----------------------
+    # ---------------------- LEFT PANEL: File Structure & Generation ----------------------
     with col_left:
         st.subheader("Project File Structure")
         root_path = tmp_dir
@@ -588,7 +1014,7 @@ if uploaded_zip:
         show_file_tree(root_path)
 
         # Optional: File preview
-        if hasattr(st.session_state, 'selected_file') and st.session_state.selected_file:
+        if hasattr(st.session_sta   , 'selected_file') and st.session_state.selected_file:
             selected_file = st.session_state.selected_file
             st.markdown(f"**Selected:** {st.session_state.selected_file_name}")
             try:
@@ -602,6 +1028,30 @@ if uploaded_zip:
         st.markdown("---")
         st.subheader("Auto-generate Testcases")
 
+        # User prompt input for project context
+        st.markdown("#### Project Context")
+        user_prompt = st.text_area(
+            "Describe Your Project (optional but recommended)",
+            placeholder="E.g., A Flask web app with a login, register, and dashboard system. Students should build a complete authentication system with user management...",
+            height=150,
+            help="Provide context about your project's purpose, complexity, and functionality. This helps generate more relevant and appropriate tasks."
+        )
+        
+        # Show helpful tips
+        with st.expander("Tips for Writing Effective Project Descriptions", expanded=False):
+            st.markdown("""
+            **Good project descriptions include:**
+            - **Purpose**: What the application does (e.g., "e-commerce site", "blog platform")
+            - **Key Features**: Main functionality (e.g., "user authentication", "product catalog", "payment processing")
+            - **Complexity Level**: Beginner, intermediate, or advanced
+            - **Learning Goals**: What students should learn (e.g., "database integration", "API design", "security practices")
+            
+            **Examples:**
+            - "A simple blog platform where students learn Flask basics, template inheritance, and basic CRUD operations"
+            - "An e-commerce site with user authentication, product management, and shopping cart functionality"
+            - "A task management app with user registration, project creation, and team collaboration features"
+            """)
+
         # Initialize Gemini generator
         gemini_generator = GeminiTestCaseGenerator()
         generation_method = gemini_generator.get_generation_method()
@@ -610,25 +1060,51 @@ if uploaded_zip:
             st.info("Generating testcases... Please wait.")
             try:
                 if generation_method == 'AI' and gemini_generator.is_ai_enabled():
-                    # Use Gemini AI generation
+                    # Use Gemini AI generation with user context
                     project_meta = {
-                        "project": "New Project",
-                        "description": "Auto-generated progressive validation project"
+                        "project": "Custom Flask Project",
+                        "description": user_prompt or "Auto-generated project without user context"
                     }
                     result_json = gemini_generator.generate_project_json_with_ai(tmp_dir, project_meta)
+                    
+                    # Add user prompt to the generated JSON for reference
+                    if user_prompt:
+                        result_json["creator_prompt"] = user_prompt
+                        result_json["generation_context"] = "Generated with user-provided project context"
+                    else:
+                        result_json["generation_context"] = "Generated without user context"
                     
                     # Save the generated JSON
                     project_file = os.path.join(tmp_dir, "project_tasks.json")
                     with open(project_file, "w") as f:
                         json.dump(result_json, f, indent=2)
                     
-                    st.success("Testcases generated")
-                    st.json(result_json)
+                    st.success("Testcases generated successfully!")
+                    if user_prompt:
+                        st.info(f"✅ Generated with your project context: '{user_prompt[:100]}{'...' if len(user_prompt) > 100 else ''}'")
+                    
+                    # Show task summary
+                    st.markdown("#### 📋 Generated Tasks Summary")
+                    tasks = result_json.get('tasks', [])
+                    if tasks:
+                        for task in tasks:
+                            col_task_id, col_task_name, col_task_points = st.columns([1, 3, 1])
+                            with col_task_id:
+                                st.write(f"**Task {task['id']}**")
+                            with col_task_name:
+                                st.write(task.get('name', 'Unnamed Task'))
+                            with col_task_points:
+                                val_points = task.get('validation_rules', {}).get('points', 0)
+                                ui_points = task.get('playwright_test', {}).get('points', 0)
+                                st.write(f"**{val_points + ui_points} pts**")
+                    else:
+                        st.info("No tasks were generated.")
+                    
                     st.session_state.generated_json = result_json
                     
                 else:
                     # Fallback to original parser method
-                    st.info("📝 Generating testcases using parser method...")
+                    st.info("Generating testcases using parser method...")
                     node_script = Path(__file__).parent / "autoTestcaseGenerator.js"
                     result = subprocess.run(
                         ["node", str(node_script), tmp_dir],
@@ -642,7 +1118,24 @@ if uploaded_zip:
                         if os.path.exists(project_json_path):
                             with open(project_json_path, "r", encoding="utf-8") as f:
                                 project_data = json.load(f)
-                            st.json(project_data)
+                            
+                            # Show task summary
+                            st.markdown("#### 📋 Generated Tasks Summary")
+                            tasks = project_data.get('tasks', [])
+                            if tasks:
+                                for task in tasks:
+                                    col_task_id, col_task_name, col_task_points = st.columns([1, 3, 1])
+                                    with col_task_id:
+                                        st.write(f"**Task {task['id']}**")
+                                    with col_task_name:
+                                        st.write(task.get('name', 'Unnamed Task'))
+                                    with col_task_points:
+                                        val_points = task.get('validation_rules', {}).get('points', 0)
+                                        ui_points = task.get('playwright_test', {}).get('points', 0)
+                                        st.write(f"**{val_points + ui_points} pts**")
+                            else:
+                                st.info("No tasks were generated.")
+                            
                             st.session_state.generated_json = project_data
                             # Store generation timestamp
                             from datetime import datetime
@@ -655,34 +1148,48 @@ if uploaded_zip:
             except Exception as e:
                 st.error(f"Generation failed: {str(e)}")
                 if generation_method == 'AI':
-                    st.info("💡 Tip: Check your GEMINI_API_KEY in .env or try switching to PARSER mode")
+                    st.info("Tip: Check your GEMINI_API_KEY in .env or try switching to PARSER mode")
 
-    # ---------------------- RIGHT PANEL ----------------------
+    # ---------------------- RIGHT PANEL: Task Configuration & Form ----------------------
     with col_right:
-        st.subheader("Task Configuration")
+        st.subheader("Task Configuration & Form")
         
         # Check if we have generated JSON
         if hasattr(st.session_state, 'generated_json') and st.session_state.generated_json:
             project_data = st.session_state.generated_json
             
             # Project Info Section
-            st.markdown("### Project Information")
-            project_data["project"] = st.text_input("Project Name", value=project_data.get("project", ""))
-            project_data["description"] = st.text_area("Project Description", value=project_data.get("description", ""))
+            with st.expander("📋 Project Information", expanded=True):
+                project_data["project"] = st.text_input("Project Name", value=project_data.get("project", ""))
+                project_data["description"] = st.text_area("Project Description", value=project_data.get("description", ""))
+                
+                # Show project stats
+                col_stats1, col_stats2, col_stats3 = st.columns(3)
+                with col_stats1:
+                    st.metric("Total Tasks", len(project_data.get("tasks", [])))
+                with col_stats2:
+                    total_points = sum(
+                        task.get('validation_rules', {}).get('points', 0) + 
+                        task.get('playwright_test', {}).get('points', 0)
+                        for task in project_data.get('tasks', [])
+                    )
+                    st.metric("Total Points", total_points)
+                with col_stats3:
+                    st.metric("Generation Method", generation_method)
             
             st.markdown("---")
-            st.markdown("### Tasks Configuration")
+            st.markdown("### 📝 Tasks Configuration")
             
             for i, task in enumerate(project_data["tasks"]):
                 with st.expander(f"Task {task['id']}: {task['name']}", expanded=False):
                     col_task_header, col_delete = st.columns([4, 1])
                     with col_delete:
-                        if st.button("Delete", key=f"delete_task_{i}", help="Delete this task"):
+                        if st.button("Delete", key=f"tc_delete_task_{i}", help="Delete this task"):
                             project_data["tasks"].pop(i)
                             st.session_state.generated_json = project_data
                             st.rerun()
-                    new_name = st.text_input(f"Task Name", value=task["name"], key=f"task_name_{i}")
-                    new_description = st.text_area(f"Description", value=task["description"], key=f"task_desc_{i}")
+                    new_name = st.text_input(f"Task Name", value=task["name"], key=f"tc_task_name_{i}")
+                    new_description = st.text_area(f"Description", value=task["description"], key=f"tc_task_desc_{i}")
                     
                     st.markdown("**Required Files:**")
                     
@@ -704,7 +1211,7 @@ if uploaded_zip:
                         "Select Required Files",
                         options=available_files,
                         default=current_files,
-                        key=f"required_files_{i}",
+                        key=f"tc_required_files_{i}",
                         help="Select the files that students must include in their project"
                     )
                     
@@ -741,7 +1248,7 @@ if uploaded_zip:
                             "Type", 
                             type_options, 
                             index=type_index,
-                            key=f"val_type_{i}"
+                            key=f"tc_val_type_{i}"
                         )
                         
                         # Dynamic points based on complexity
@@ -753,7 +1260,7 @@ if uploaded_zip:
                             min_value=1, 
                             max_value=100, 
                             value=max(current_points, complexity_score),
-                            key=f"val_points_{i}"
+                            key=f"tc_val_points_{i}"
                         )
                     
                     with col2:
@@ -761,7 +1268,7 @@ if uploaded_zip:
                         new_file = st.text_input(
                             "File", 
                             value=current_file,
-                            key=f"val_file_{i}"
+                            key=f"tc_val_file_{i}"
                         )
                     
                     # Update validation rules only if changed
@@ -821,14 +1328,14 @@ if uploaded_zip:
                         new_route = st.text_input(
                             "Route", 
                             value=current_route or route_suggestion,
-                            key=f"pw_route_{i}"
+                            key=f"tc_pw_route_{i}"
                         )
                         new_ui_points = st.number_input(
                             "Points", 
                             min_value=1, 
                             max_value=100, 
                             value=current_ui_points,
-                            key=f"ui_points_{i}"
+                            key=f"tc_ui_points_{i}"
                         )
                         
                         # Update only if changed
@@ -875,7 +1382,7 @@ if uploaded_zip:
                             "Actions (one per line)",
                             value=actions_text,
                             height=100,
-                            key=f"ui_actions_{i}"
+                            key=f"tc_ui_actions_{i}"
                         )
                         
                         # Parse actions back to proper format
@@ -932,7 +1439,7 @@ if uploaded_zip:
                         "Validation Rules (one per line)",
                         value=validation_text,
                         height=100,
-                        key=f"ui_validate_{i}",
+                        key=f"tc_ui_validate_{i}",
                         help="Format: type: value (e.g., 'text_present: Login successful')"
                     )
                     
@@ -972,7 +1479,7 @@ if uploaded_zip:
                             min_value=0, 
                             max_value=100, 
                             value=current_min_score,
-                            key=f"unlock_score_{i}"
+                            key=f"tc_unlock_score_{i}"
                         )
                     
                     with col6:
@@ -984,7 +1491,7 @@ if uploaded_zip:
                         required_tasks_input = st.text_input(
                             "Required Tasks (comma-separated IDs)",
                             value=required_tasks_text,
-                            key=f"unlock_tasks_{i}"
+                            key=f"tc_unlock_tasks_{i}"
                         )
                         
                         # Parse required tasks
@@ -1005,23 +1512,31 @@ if uploaded_zip:
             
             # Comprehensive Task Verification Section
             st.markdown("---")
-            st.markdown("### Comprehensive Task Verification")
+            st.markdown("### 🧪 Test Verification")
             
             # Check if Playwright backend is available
             playwright_available = check_playwright_backend()
             
             if playwright_available:
-                if st.button("Run Comprehensive Verification", use_container_width=True, type="primary"):
-                    with st.spinner("Running comprehensive task verification..."):
-                        verification_results = run_comprehensive_task_verification(project_data, tmp_dir)
-                        st.session_state.comprehensive_verification_results = verification_results
-                        st.success("Comprehensive verification completed!")
+                col_verify, col_status = st.columns([2, 1])
+                with col_verify:
+                    if st.button("🚀 Run Comprehensive Verification", use_container_width=True, type="primary"):
+                        with st.spinner("Running comprehensive task verification..."):
+                            verification_results = run_comprehensive_task_verification(project_data, tmp_dir)
+                            st.session_state.comprehensive_verification_results = verification_results
+                            st.success("Comprehensive verification completed!")
+                
+                with col_status:
+                    if playwright_available:
+                        st.success("✅ Backend Ready")
+                    else:
+                        st.error("❌ Backend Offline")
                 
                 # Display comprehensive verification results
                 if hasattr(st.session_state, 'comprehensive_verification_results') and st.session_state.comprehensive_verification_results:
                     display_comprehensive_verification_results(st.session_state.comprehensive_verification_results)
             else:
-                st.warning("Playwright backend not available. Start the backend server to enable comprehensive verification.")
+                st.warning("⚠️ Playwright backend not available. Start the backend server to enable comprehensive verification.")
                 st.code("python playwright_backend/start_server.py", language="bash")
             
             # Add new task button
@@ -1058,10 +1573,12 @@ if uploaded_zip:
                     st.rerun()
             
             # Action buttons
-            col_save, col_edit = st.columns(2)
+            st.markdown("---")
+            st.markdown("### 💾 Save & Export")
+            col_save, col_edit, col_spacer = st.columns([1, 1, 2])
             
             with col_save:
-                if st.button("Save Project Package", use_container_width=True):
+                if st.button("💾 Save Project Package", use_container_width=True, type="primary"):
                     # Create projects directory (shared with student.py)
                     projects_dir = Path("projects")
                     projects_dir.mkdir(exist_ok=True)
@@ -1143,7 +1660,7 @@ To use this package:
                     )
             
             with col_edit:
-                if st.button("Edit Raw JSON", use_container_width=True):
+                if st.button("✏️ Edit Raw JSON", use_container_width=True):
                     st.session_state.edit_mode = not st.session_state.get('edit_mode', False)
             
             # Raw JSON editor
@@ -1311,7 +1828,7 @@ To use this package:
                             st.write(f"**Route:** {task['playwright_test']['route']}")
                             st.write(f"**Points:** {task['validation_rules']['points']} (validation) + {task['playwright_test']['points']} (UI test)")
                         with col10:
-                            if st.button("Remove", key=f"remove_{i}", help="Delete this task"):
+                            if st.button("Remove", key=f"tc_remove_{i}", help="Delete this task"):
                                 st.session_state.tasks.pop(i)
                                 st.rerun()
                 
@@ -1341,3 +1858,39 @@ To use this package:
 
 else:
     st.info("Please upload a project ZIP to begin.")
+
+# Project Management Section (Full Width at Bottom)
+st.markdown("---")
+st.subheader("Project Management")
+
+# Load existing projects
+existing_projects = load_existing_projects()
+
+if existing_projects:
+    st.markdown("#### Existing Projects")
+    
+    # Project selection and management
+    col_project_select, col_project_actions = st.columns([3, 1])
+    
+    with col_project_select:
+        project_names = [f"{p['name']} ({len(p.get('tasks', []))} tasks)" for p in existing_projects]
+        selected_project_idx = st.selectbox(
+            "Select Project to Manage",
+            range(len(existing_projects)),
+            format_func=lambda x: project_names[x],
+            key="project_selector"
+        )
+    
+    with col_project_actions:
+        if st.button("Refresh Projects", help="Reload projects from disk"):
+            st.rerun()
+    
+    if selected_project_idx is not None:
+        selected_project = existing_projects[selected_project_idx]
+        display_project_details(selected_project, selected_project_idx)
+        
+        # Project editing interface
+        if hasattr(st.session_state, 'editing_project') and st.session_state.editing_project_idx == selected_project_idx:
+            display_project_editor(selected_project, selected_project_idx)
+else:
+    st.info("No existing projects found. Upload a project ZIP and generate testcases to create your first project.")
