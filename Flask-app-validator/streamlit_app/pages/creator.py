@@ -4,6 +4,7 @@ import tempfile, zipfile, os, json
 from pathlib import Path
 import sys
 import requests
+from requests.exceptions import Timeout as RequestTimeout, RequestException
 import asyncio
 import threading
 import time
@@ -48,8 +49,8 @@ def display_project_details(project, project_idx):
             for task in project.get('tasks', [])
         )
         st.metric("Total Points", total_points)
-    with col_meta3:
-        st.metric("Config File", project.get('config_file', 'Unknown').split('/')[-1])
+    # with col_meta3:
+    #     st.metric("Config File", project.get('config_file', 'Unknown').split('/')[-1])
     
     # Project description
     if project.get('description'):
@@ -155,7 +156,8 @@ def export_project(project):
         label="Download Project Configuration",
         data=json_str,
         file_name=f"{project['name'].replace(' ', '_')}_configuration.json",
-        mime="application/json"
+        mime="application/json",
+        key=f"export_project_{project['name'].replace(' ', '_')}"
     )
 
 def delete_project(project_idx):
@@ -436,6 +438,27 @@ def save_project(project):
     except Exception as e:
         st.error(f"Error saving project: {e}")
 
+def save_project_from_verification(project_data):
+    """Save project configuration after comprehensive verification."""
+    try:
+        # Create projects directory (shared with student.py)
+        projects_dir = Path("projects")
+        projects_dir.mkdir(exist_ok=True)
+        
+        # Create project name
+        project_name = project_data.get("project", "project").replace(" ", "_").lower()
+        
+        # Save JSON configuration to projects directory (for student.py to find)
+        json_filename = f"{project_name}_configuration.json"
+        json_path = projects_dir / json_filename
+        
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(project_data, f, indent=2)
+        
+        return json_path
+    except Exception as e:
+        raise Exception(f"Error saving project after verification: {str(e)}")
+
 # Helper functions for Playwright preview
 def check_playwright_backend():
     try:
@@ -448,10 +471,15 @@ def run_comprehensive_task_verification(project_data, tmp_dir):
     """
     Comprehensive task verification that combines preview testing and reference screenshot capture.
     Creates detailed logs for each project and task analysis.
+    Automatically saves the project after verification.
     """
     try:
         flask_process = start_flask_app(tmp_dir)
-        time.sleep(3)
+        # Poll Flask app readiness instead of fixed sleep
+        try:
+            wait_for_flask_ready("http://127.0.0.1:5000", timeout_seconds=15)
+        except Exception:
+            pass
         
         # Create comprehensive verification results
         verification_results = {
@@ -471,15 +499,20 @@ def run_comprehensive_task_verification(project_data, tmp_dir):
         
         # Process each task comprehensively
         for task in project_data.get("tasks", []):
-            task_analysis = analyze_task_comprehensively(task, tmp_dir)
+            task_analysis = analyze_task_comprehensively(task, tmp_dir, project_data.get("project", "Unknown Project"))
             verification_results["tasks"].append(task_analysis)
             
             # Update summary
             verification_results["summary"]["total_tests"] += 1
             if task_analysis["test_status"] == "PASS":
                 verification_results["summary"]["passed_tests"] += 1
-            elif task_analysis["test_status"] == "FAIL":
+            elif task_analysis["test_status"] in ["FAIL", "ERROR", "TIMEOUT"]:
                 verification_results["summary"]["failed_tests"] += 1
+                # Add error to summary if present
+                if task_analysis.get("errors"):
+                    verification_results["summary"]["errors"].extend(task_analysis["errors"])
+                if task_analysis.get("test_message"):
+                    verification_results["summary"]["errors"].append(f"Task {task_analysis['task_id']}: {task_analysis['test_message']}")
             
             if task_analysis["screenshot_captured"]:
                 verification_results["summary"]["screenshots_captured"] += 1
@@ -490,6 +523,12 @@ def run_comprehensive_task_verification(project_data, tmp_dir):
         
         # Save comprehensive log
         save_verification_log(verification_results, tmp_dir)
+        
+        # Automatically save project configuration after verification
+        try:
+            save_project_from_verification(project_data)
+        except Exception as save_error:
+            st.warning(f"Project was verified but could not be saved: {str(save_error)}")
         
         return verification_results
         
@@ -516,16 +555,41 @@ def start_flask_app(tmp_dir):
                     break
         
         if os.path.exists(app_py):
-            # Start Flask app
+            # Start Flask app with better output handling
             process = subprocess.Popen([
                 sys.executable, app_py
-            ], cwd=tmp_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            ], cwd=tmp_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
+               text=True, bufsize=1)
+            
+            # Wait a bit for process to initialize
+            time.sleep(0.5)
+            
+            # Check if process is still running (didn't crash immediately)
+            if process.poll() is not None:
+                stdout, stderr = process.communicate()
+                st.warning(f"Flask app exited immediately. STDOUT: {stdout[:500]} STDERR: {stderr[:500]}")
+                return None
+            
             return process
     except Exception as e:
         st.error(f"Failed to start Flask app: {e}")
     return None
 
-def analyze_task_comprehensively(task, tmp_dir):
+def wait_for_flask_ready(base_url: str, timeout_seconds: int = 30, interval: float = 0.5):
+    """Poll the Flask app until it responds or timeout."""
+    start = time.time()
+    last_error = None
+    while time.time() - start < timeout_seconds:
+        try:
+            r = requests.get(base_url, timeout=2)
+            if r.status_code < 500:
+                return True
+        except Exception as e:
+            last_error = e
+        time.sleep(interval)
+    raise TimeoutError(f"Flask app did not become ready in time. Last error: {last_error}")
+
+def analyze_task_comprehensively(task, tmp_dir, project_name="Unknown Project"):
     """
     Comprehensive analysis of a single task including testing and screenshot capture.
     Returns detailed analysis with logs.
@@ -563,7 +627,7 @@ def analyze_task_comprehensively(task, tmp_dir):
             return analysis
         
         # Run comprehensive test (both validation and screenshot capture)
-        test_result = run_comprehensive_task_test(task, tmp_dir)
+        test_result = run_comprehensive_task_test(task, tmp_dir, project_name)
         
         analysis["test_status"] = test_result["status"]
         analysis["test_message"] = test_result["message"]
@@ -635,7 +699,7 @@ def analyze_task_configuration(task):
     
     return config_analysis
 
-def run_comprehensive_task_test(task, tmp_dir):
+def run_comprehensive_task_test(task, tmp_dir, project_name="Unknown Project"):
     """Run comprehensive test for a single task (validation + screenshot)."""
     try:
         playwright_test = task.get("playwright_test", {})
@@ -652,8 +716,9 @@ def run_comprehensive_task_test(task, tmp_dir):
         test_data = {
             "base_url": "http://127.0.0.1:5000",
             "test_suite": "custom",
-            "project_name": f"comprehensive_task_{task['id']}",
-            "timeout": 30,
+            # Group results under project_name to avoid clutter
+            "project_name": f"creator_{project_name.replace(' ', '_').lower()}_task_{task['id']}",
+            "timeout": 120,  # Increased timeout for complex validations
             "headless": True,
             "capture_screenshots": True,
             "task_config": {
@@ -666,18 +731,54 @@ def run_comprehensive_task_test(task, tmp_dir):
         }
         
         # Call Playwright backend for comprehensive test
-        response = requests.post(
-            "http://127.0.0.1:8001/run-custom-task-test",
-            json=test_data,
-            timeout=60
-        )
+        # Route Playwright results to Logs/<project>/screenshots via env override
+        env = os.environ.copy()
+        logs_base = Path("Logs") / project_name.replace(" ", "_").lower()
+        (logs_base / "screenshots").mkdir(parents=True, exist_ok=True)
+        env["CREATOR_RESULTS_DIR"] = str(logs_base)
+
+        # Add retry logic for timeouts
+        max_retries = 2
+        for attempt in range(max_retries):
+            try:
+                response = requests.post(
+                    "http://127.0.0.1:8001/run-custom-task-test",
+                    json={**test_data, "results_dir": str(logs_base)},
+                    timeout=120  # Increased timeout
+                )
+                break  # Success, exit retry loop
+            except RequestTimeout:
+                if attempt < max_retries - 1:
+                    time.sleep(2)  # Wait before retry
+                    continue
+                else:
+                    raise
         
         if response.status_code == 200:
             result = response.json()
+            # Handle multiple screenshots - take only the first one to avoid duplicates
+            screenshot_path = None
+            if result.get("screenshots") and len(result["screenshots"]) > 0:
+                # Take the first screenshot to avoid duplicate display issues
+                screenshot_path = result["screenshots"][0]
+            
+            # Get detailed validation count
+            validation_results = result.get("results", [])
+            total_validations = len([r for r in validation_results if r.get("validation_results")])
+            passed_validations = sum(1 for r in validation_results for v in r.get("validation_results", []) if v.get("passed", False))
+            
+            status = "PASS" if result["failed_tests"] == 0 and passed_validations > 0 else "FAIL"
+            
+            # Create informative message
+            if total_validations > 0:
+                message = f"Validation: {passed_validations}/{len(validation_results[0].get('validation_results', []))} passed" if validation_results else "Test completed"
+            else:
+                message = f"Test: {result['passed_tests']}/{result['total_tests']} passed"
+            
             return {
-                "status": "PASS" if result["failed_tests"] == 0 else "FAIL",
-                "message": f"Comprehensive test: {result['passed_tests']}/{result['total_tests']} passed",
-                "screenshot": result["screenshots"][0] if result["screenshots"] else None,
+                "status": status,
+                "message": message,
+                "screenshot": screenshot_path,
                 "details": result,
                 "validation_results": result.get("results", []),
                 "logs": result.get("logs", [])
@@ -690,12 +791,29 @@ def run_comprehensive_task_test(task, tmp_dir):
                 "error": f"HTTP {response.status_code}"
             }
             
+    except RequestTimeout as e:
+        return {
+            "status": "TIMEOUT",
+            "message": f"Test timed out after 120 seconds: {str(e)}",
+            "screenshot": None,
+            "error": f"Timeout: {str(e)}",
+            "logs": [f"Test execution timed out. The application may be slow or unresponsive."]
+        }
+    except RequestException as e:
+        return {
+            "status": "ERROR",
+            "message": f"Network error: {str(e)}",
+            "screenshot": None,
+            "error": str(e),
+            "logs": [f"Failed to connect to Playwright backend: {str(e)}"]
+        }
     except Exception as e:
         return {
             "status": "ERROR",
             "message": str(e),
             "screenshot": None,
-            "error": str(e)
+            "error": str(e),
+            "logs": [f"Unexpected error during test execution: {str(e)}"]
         }
 
 def capture_reference_screenshots(project_data, tmp_dir):
@@ -757,7 +875,10 @@ def capture_task_screenshot(task, route):
         
         if response.status_code == 200:
             result = response.json()
-            return result["screenshots"][0] if result["screenshots"] else None
+            # Handle multiple screenshots - take only the first one to avoid duplicates
+            if result.get("screenshots") and len(result["screenshots"]) > 0:
+                return result["screenshots"][0]
+            return None
     except Exception as e:
         st.error(f"Screenshot failed for task {task['id']}: {e}")
     return None
@@ -802,6 +923,8 @@ def save_verification_log(verification_results, tmp_dir):
         # Create project-specific log directory
         project_name = verification_results["project_name"].replace(" ", "_").lower()
         project_log_dir = logs_dir / project_name
+        # Ensure screenshots folder exists for this project
+        (project_log_dir / "screenshots").mkdir(exist_ok=True)
         project_log_dir.mkdir(exist_ok=True)
         
         # Generate log filename with timestamp
@@ -948,7 +1071,8 @@ def display_comprehensive_verification_results(verification_results):
             st.write(f"**Task {task['task_id']}:** {task['task_name']}")
             st.write(f"*{task['test_message']}*")
             if task["screenshot_captured"]:
-                st.write("Screenshot captured")
+                st.write("📸 Screenshot captured")
+                # Note: Only showing first screenshot to avoid duplicate download button errors
         
         with col_score:
             config_analysis = task["configuration_analysis"]
@@ -1014,7 +1138,7 @@ if uploaded_zip:
         show_file_tree(root_path)
 
         # Optional: File preview
-        if hasattr(st.session_sta   , 'selected_file') and st.session_state.selected_file:
+        if hasattr(st.session_state, 'selected_file') and st.session_state.selected_file:
             selected_file = st.session_state.selected_file
             st.markdown(f"**Selected:** {st.session_state.selected_file_name}")
             try:
@@ -1334,7 +1458,7 @@ if uploaded_zip:
                             "Points", 
                             min_value=1, 
                             max_value=100, 
-                            value=current_ui_points,
+                            value=max(1, int(current_ui_points)),
                             key=f"tc_ui_points_{i}"
                         )
                         
@@ -1645,7 +1769,8 @@ To use this package:
                         data=package_content,
                         file_name=f"{project_name}_package.zip",
                         mime="application/zip",
-                        help="Downloads the complete project package with JSON config and source ZIP"
+                        help="Downloads the complete project package with JSON config and source ZIP",
+                        key=f"download_package_{project_name}"
                     )
                     
                     # Also provide individual JSON download
@@ -1656,7 +1781,8 @@ To use this package:
                         data=json_content,
                         file_name=json_filename,
                         mime="application/json",
-                        help="Downloads only the JSON configuration file"
+                        help="Downloads only the JSON configuration file",
+                        key=f"download_json_{project_name}"
                     )
             
             with col_edit:
@@ -1853,7 +1979,8 @@ To use this package:
                         label="Download Project Configuration",
                         data=json_str,
                         file_name="project_configuration.json",
-                        mime="application/json"
+                        mime="application/json",
+                        key="download_manual_config"
                     )
 
 else:

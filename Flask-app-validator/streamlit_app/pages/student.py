@@ -356,31 +356,62 @@ for t in all_tasks:
                             screenshots = result_data.get('screenshots', [])
                             if screenshots:
                                 st.write("Screenshots captured:")
-                                for i, screenshot in enumerate(screenshots[:3]):
+                                
+                                # Smart screenshot selection - prefer final.png over initial.png for same page
+                                screenshot_groups = {}
+                                for screenshot in screenshots:
                                     screenshot_path = Path(screenshot).resolve()
                                     if screenshot_path.exists():
-                                        try:
-                                            screenshot_name = f"Screenshot {i+1}"
-                                            
-                                            st.markdown(f"**{screenshot_name}**")
-                                            
-                                            with open(screenshot_path, "rb") as img_file:
-                                                img_data = img_file.read()
-                                            
-                                            st.image(img_data, caption=f"Click to view full size", width='stretch')
-                                            
-                                            st.download_button(
-                                                label="📥 Download Image",
-                                                data=img_data,
-                                                file_name=screenshot_path.name,
-                                                mime="image/png",
-                                                key=f"download_{i}"
-                                            )
-                                            st.caption(f"File: {screenshot_path.name}")
-                                        except Exception as e:
-                                            st.write(f"Could not display screenshot {i+1}: {str(e)}")
-                                    else:
-                                        st.write(f"Screenshot {i+1} not found: {screenshot_path}")
+                                        filename = screenshot_path.name
+                                        # Group screenshots by base name (without initial/final prefix)
+                                        base_name = filename.replace('initial.png', '').replace('final.png', '').replace('screenshot_', '')
+                                        if base_name not in screenshot_groups:
+                                            screenshot_groups[base_name] = []
+                                        screenshot_groups[base_name].append(screenshot)
+                                
+                                # Select best screenshot from each group (prefer final.png)
+                                unique_screenshots = []
+                                for group_screenshots in screenshot_groups.values():
+                                    # Sort to prefer final.png over initial.png
+                                    group_screenshots.sort(key=lambda x: (
+                                        0 if 'final.png' in x else 1,  # final.png first
+                                        x  # then alphabetically
+                                    ))
+                                    unique_screenshots.append(group_screenshots[0])  # Take the best one
+                                
+                                # Display unique screenshots (limit to 3 to avoid UI clutter)
+                                for i, screenshot in enumerate(unique_screenshots[:3]):
+                                    screenshot_path = Path(screenshot).resolve()
+                                    try:
+                                        screenshot_name = f"Screenshot {i+1}"
+                                        
+                                        st.markdown(f"**{screenshot_name}**")
+                                        
+                                        with open(screenshot_path, "rb") as img_file:
+                                            img_data = img_file.read()
+                                        
+                                        # Determine screenshot type for better caption
+                                        screenshot_type = "Final state" if 'final.png' in screenshot_path.name else "Initial state" if 'initial.png' in screenshot_path.name else "Screenshot"
+                                        st.image(img_data, caption=f"{screenshot_type} - Click to view full size", width='stretch')
+                                        
+                                        st.download_button(
+                                            label="📥 Download Image",
+                                            data=img_data,
+                                            file_name=screenshot_path.name,
+                                            mime="image/png",
+                                            key=f"download_task_{t['id']}_screenshot_{i}"
+                                        )
+                                        st.caption(f"File: {screenshot_path.name}")
+                                    except Exception as e:
+                                        st.write(f"Could not display screenshot {i+1}: {str(e)}")
+                                
+                                # Show count if there were more screenshots
+                                if len(unique_screenshots) > 3:
+                                    st.caption(f"... and {len(unique_screenshots) - 3} more screenshots")
+                                
+                                # Add note about screenshot selection
+                                if len(screenshots) > len(unique_screenshots):
+                                    st.caption("💡 Showing final state screenshots (preferred over initial state)")
                             
                             # Show validation timestamp
                             timestamp = result_data.get('timestamp', '')

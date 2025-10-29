@@ -338,6 +338,28 @@ requirements.txt
     def _parse_ai_response(self, text: str, project_meta: Dict = None) -> Dict:
         text = text.strip()
         
+        def _sanitize_json_text(s: str) -> str:
+            """Best-effort cleanup of LLM JSON: strip fences, smart quotes, ellipses, and trailing commas."""
+            import re
+            # Strip any fenced code blocks anywhere
+            s = re.sub(r"```(json)?", "", s)
+            # Normalize smart quotes
+            s = s.replace("\u201c", '"').replace("\u201d", '"').replace("\u2018", "'").replace("\u2019", "'")
+            s = s.replace("“", '"').replace("”", '"').replace("‘", "'").replace("’", "'")
+            # Remove ellipses placeholders
+            s = s.replace("...", "")
+            s = s.replace("…", "")
+            # Remove trailing commas before closing braces/brackets
+            s = re.sub(r",\s*(\})", r"\1", s)
+            s = re.sub(r",\s*(\])", r"\1", s)
+            # Remove stray leading commas after opening braces/brackets
+            s = re.sub(r"\{\s*,", "{", s)
+            s = re.sub(r"\[\s*,", "[", s)
+            return s
+        
+        # First-pass sanitize
+        text = _sanitize_json_text(text)
+        
         if text.startswith("```json"):
             text = text[7:]
         elif text.startswith("```"):
@@ -368,6 +390,9 @@ requirements.txt
                 if json_end != -1 and json_end > json_start:
                     text = text[json_start:json_end + 1]
         
+        # Second-pass sanitize after extracting core JSON region
+        text = _sanitize_json_text(text)
+        # Additional gentle fixes for missing commas in common newline patterns
         text = text.replace('\n"', ',\n"')
         text = text.replace('{\n,', '{\n')
         text = text.replace('[\n,', '[\n')
@@ -401,10 +426,41 @@ requirements.txt
                         "checks": ["Required files exist"]
                     }
                 
-                # Fix incorrect type with checks array
-                elif isinstance(validation_rules, dict) and validation_rules.get("type") == "html" and "checks" in validation_rules:
-                    validation_rules["type"] = "structure"
-                    print(f"[GeminiTestCaseGenerator] Fixed task {task.get('id', '?')}: Changed 'html' to 'structure' for checks array")
+                # Fix incorrect type with checks array (should be structure, not html)
+                elif isinstance(validation_rules, dict) and "checks" in validation_rules:
+                    if validation_rules.get("type") != "structure":
+                        validation_rules["type"] = "structure"
+                        print(f"[GeminiTestCaseGenerator] Fixed task {task.get('id', '?')}: Changed type to 'structure' for checks array")
+                    
+                    # Remove any 'file' key if present (structure rules don't use it)
+                    if "file" in validation_rules:
+                        del validation_rules["file"]
+                        print(f"[GeminiTestCaseGenerator] Fixed task {task.get('id', '?')}: Removed invalid 'file' key from structure rule")
+                
+                # Fix missing "file" key in HTML validation rules
+                elif isinstance(validation_rules, dict) and validation_rules.get("type") == "html" and "file" not in validation_rules:
+                    # Check if "routes" was incorrectly used (legacy issue)
+                    if "routes" in validation_rules:
+                        # Convert to runtime validation type
+                        routes = validation_rules.get("routes", [])
+                        validation_rules["type"] = "runtime"
+                        validation_rules["file"] = "app.py"
+                        validation_rules["mustHaveRoutes"] = [r.get("route", "/") for r in routes if isinstance(r, dict)]
+                        validation_rules.pop("routes", None)  # Remove the invalid "routes" key
+                        print(f"[GeminiTestCaseGenerator] Fixed task {task.get('id', '?')}: Converted HTML rule with 'routes' to runtime validation")
+                    else:
+                        # Try to infer the file from required_files
+                        required_files = task.get("required_files", [])
+                        html_files = [f for f in required_files if f.endswith(".html")]
+                        
+                        if html_files:
+                            validation_rules["file"] = html_files[0]
+                            print(f"[GeminiTestCaseGenerator] Fixed task {task.get('id', '?')}: Added missing 'file' field to HTML validation rule: {html_files[0]}")
+                        else:
+                            # If no HTML files found, convert to structure validation
+                            validation_rules["type"] = "structure"
+                            validation_rules["checks"] = ["Required files exist"]
+                            print(f"[GeminiTestCaseGenerator] Fixed task {task.get('id', '?')}: Changed missing 'file' HTML rule to structure validation")
                 
                 # Fix unrealistic scoring requirements
                 unlock_condition = task.get("unlock_condition", {})
@@ -453,7 +509,15 @@ requirements.txt
             return parsed
         except json.JSONDecodeError as e:
             print(f"[GeminiTestCaseGenerator] JSON parsing failed: {e}")
-            print(f"[GeminiTestCaseGenerator] Raw response: {text[:500]}...")
+            try:
+                import re
+                cleaned = re.sub(r",\s*(\})", r"\1", text)
+                cleaned = re.sub(r",\s*(\])", r"\1", cleaned)
+                parsed = json.loads(cleaned)
+                return parsed
+            except Exception:
+                pass
+            print(f"[GeminiTestCaseGenerator] Raw response: {text[:1000]}...")
             
             # Try to create a minimal valid JSON as fallback
             print(f"[GeminiTestCaseGenerator] Creating fallback JSON structure...")
@@ -464,12 +528,12 @@ requirements.txt
                     {
                         "id": 1,
                         "name": "Project Setup",
-                        "description": "Set up the basic project structure",
-                        "required_files": ["app.py", "requirements.txt"],
+                        "description": (project_meta.get("description") if project_meta and project_meta.get("description") else "Set up the basic project structure"),
+                        "required_files": ["app.py", "requirements.txt", "templates/", "static/"],
                         "validation_rules": {
                             "type": "structure",
                             "points": 10,
-                            "checks": ["app.py exists", "requirements.txt exists"]
+                            "checks": ["app.py exists", "requirements.txt exists", "templates folder exists", "static folder exists"]
                         },
                         "playwright_test": None,
                         "unlock_condition": {"min_score": 0, "required_tasks": []}

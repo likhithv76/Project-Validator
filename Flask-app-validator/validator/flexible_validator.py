@@ -171,6 +171,11 @@ class FlexibleFlaskValidator:
 
     def _validate_html_rule(self, rule, points):
         """Validate HTML template rules."""
+        # Check if "file" key exists
+        if "file" not in rule:
+            self.add_check("HTML Rule", False, 0, "Missing required 'file' field in HTML validation rule")
+            return
+        
         file_path = self.project_path / rule["file"]
         rule_name = f"HTML: {rule['file']}"
         

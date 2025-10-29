@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import shutil
 import sys
 import time
 from datetime import datetime
@@ -16,6 +17,10 @@ class PlaywrightTestRunner:
         self.context = None
         self.logs = []
         self.results_dir = Path(__file__).parent / "results"
+        # Allow overriding results target base via env for creator runs
+        override = os.environ.get("CREATOR_RESULTS_DIR")
+        if override:
+            self.results_dir = Path(override)
         self.tests_dir = Path(__file__).parent / "tests"
         
     async def initialize(self):
@@ -33,7 +38,8 @@ class PlaywrightTestRunner:
         project_name: str = "custom_task",
         timeout: int = 30,
         headless: bool = True,
-        capture_screenshots: bool = True
+        capture_screenshots: bool = True,
+        results_base_dir: Optional[str] = None
     ) -> List[Dict]:
         """
         Run a custom task test based on provided configuration.
@@ -53,7 +59,8 @@ class PlaywrightTestRunner:
         results = []
         
         try:
-            project_results_dir = self.results_dir / project_name
+            base_dir = Path(results_base_dir) if results_base_dir else self.results_dir
+            project_results_dir = base_dir / project_name
             project_results_dir.mkdir(parents=True, exist_ok=True)
             
             # Initialize browser if not already done
@@ -75,14 +82,20 @@ class PlaywrightTestRunner:
             
             await page.close()
             
-            # Format result
+            # Format result with more detail
+            validation_results = result.get("validation_results", [])
+            validation_count = len(validation_results)
+            passed_validations = sum(1 for v in validation_results if v.get("passed", False))
+            
             test_result = {
                 "name": f"Task {task_config.get('task_id', 'Unknown')}",
                 "status": result.get("status", "UNKNOWN"),
                 "duration": time.time() - start_time,
                 "error": result.get("error"),
                 "screenshot": result.get("reference_screenshot") or result.get("screenshot"),
-                "validation_results": result.get("validation_results", []),
+                "validation_results": validation_results,
+                "validation_count": validation_count,
+                "passed_validations": passed_validations,
                 "action_logs": result.get("action_logs", []),
                 "comprehensive_test": result.get("comprehensive_test", False)
             }
@@ -96,10 +109,18 @@ class PlaywrightTestRunner:
                 
                 for i, screenshot in enumerate(result["screenshots"]):
                     if screenshot and os.path.exists(screenshot):
-                        # Move screenshot to results directory
+                        # Copy screenshot to results directory
                         new_path = screenshots_dir / f"screenshot_{i}.png"
-                        os.rename(screenshot, new_path)
+                        # Remove existing file if it exists
+                        if new_path.exists():
+                            new_path.unlink()
+                        shutil.copy(screenshot, new_path)
                         test_result[f"screenshot_{i}"] = str(new_path)
+                        # Clean up the original screenshot
+                        try:
+                            os.remove(screenshot)
+                        except:
+                            pass
             
             await self._save_results(project_results_dir, results, start_time)
             

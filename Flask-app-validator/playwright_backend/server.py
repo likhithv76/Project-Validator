@@ -29,6 +29,7 @@ class TestRequest(BaseModel):
     headless: bool = True
     capture_screenshots: bool = True
     task_config: Optional[Dict] = None
+    results_dir: Optional[str] = None
 
 class TestResult(BaseModel):
     name: str
@@ -68,13 +69,17 @@ async def run_custom_task_test(request: TestRequest):
         # Extract task config from request
         task_config = getattr(request, 'task_config', {})
         
+        # Ensure minimum timeout for creator verification tests
+        test_timeout = max(request.timeout, 60)
+        
         results = await test_runner.run_custom_task_test(
             base_url=request.base_url,
             task_config=task_config,
             project_name=request.project_name,
-            timeout=request.timeout,
+            timeout=test_timeout,
             headless=request.headless,
-            capture_screenshots=request.capture_screenshots
+            capture_screenshots=request.capture_screenshots,
+            results_base_dir=request.results_dir
         )
         
         execution_time = time.time() - start_time
